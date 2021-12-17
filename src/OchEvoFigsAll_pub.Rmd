@@ -44,8 +44,8 @@ Data import and wrangling
 ```{r}
 # Import composite data sheets, change formats, and do some calculations
 
-dat100<-read_csv(here("data","OECD100.csv"))
-dat50<-read_csv(here("data","OECD50.csv"))
+dat100<-read_csv(here::here("data","OECD100.csv"))
+dat50<-read_csv(here::here("data","OECD50.csv"))
 
 # experiment time in days days
 dat100$Days <- dat100$Week *7
@@ -1984,8 +1984,8 @@ For the obligate mixotroph at high light, which had the strongest evidence for a
 ```{r}
 #upload thermal response data
 
-pe <- read_csv(here("data","pestats_trc3.2.csv")) 
-graz <- read_csv(here("data","TRC_grazstats_dilution.csv")) 
+pe <- read_csv(here::here("data","pestats_trc3.2.csv")) 
+graz <- read_csv(here::here("data","TRC_grazstats_dilution.csv")) 
 
 # grazing pgC per och per day (bact per och per day * C per bact * fg to pgC * 24hrs)
 graz$graz.day <- graz$G_O *24 * 113.5996283 * 0.001 
