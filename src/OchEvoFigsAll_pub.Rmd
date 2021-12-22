@@ -1092,6 +1092,7 @@ b0 <- ggplot(subset(CUE.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, 
     scale_x_continuous(limits = c(17,31),
                      breaks = c(18,24,30),
                      expand = c(0,0)) +
+  scale_y_continuous(breaks = c(.8,.9))+
   theme(legend.position = "none",
       axis.title.x=element_blank(),
       axis.text.x=element_blank(),       
@@ -1288,6 +1289,7 @@ c0 <- ggplot(subset(CUE.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y
     scale_x_continuous(limits = c(17,31),
                      breaks = c(18,24,30),
                      expand = c(0,0)) +
+  scale_y_continuous(breaks = c(.8,.9))+
   theme(legend.position = "none",
       axis.title.x=element_blank(),
       axis.text.x=element_blank(),       
@@ -1479,6 +1481,7 @@ d0 <- ggplot(subset(CUE.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y
     scale_x_continuous(limits = c(17,31),
                      breaks = c(18,24,30),
                      expand = c(0,0)) +
+  scale_y_continuous(breaks = c(.8,.9))+
   theme(legend.position = "none",
       axis.title.x=element_blank(),
       axis.text.x=element_blank(),       
