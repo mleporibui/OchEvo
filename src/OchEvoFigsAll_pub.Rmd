@@ -1092,7 +1092,6 @@ b0 <- ggplot(subset(CUE.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, 
     scale_x_continuous(limits = c(17,31),
                      breaks = c(18,24,30),
                      expand = c(0,0)) +
-  scale_y_continuous(breaks = c(.8,.9))+
   theme(legend.position = "none",
       axis.title.x=element_blank(),
       axis.text.x=element_blank(),       
@@ -1481,7 +1480,6 @@ d0 <- ggplot(subset(CUE.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y
     scale_x_continuous(limits = c(17,31),
                      breaks = c(18,24,30),
                      expand = c(0,0)) +
-  scale_y_continuous(breaks = c(.8,.9))+
   theme(legend.position = "none",
       axis.title.x=element_blank(),
       axis.text.x=element_blank(),       
@@ -1845,7 +1843,7 @@ ggarrange(p1,p2,p3,p4,p5,p6,
 Calculate delta values
 
 ```{r}
-# percent changes 
+# calculate percent changes and name
 
 #growth
 del.gr.18 <- growths100_last3.93 %>% 
@@ -1996,7 +1994,7 @@ graz$graz.day <- graz$G_O *24 * 113.5996283 * 0.001
 pe$ID.Ev <- paste(pe$Strain,pe$Ev,pe$Rep,sep='.')
 graz$ID.Ev <- paste(graz$Strain,graz$Ev,graz$Rep,sep='.')
 
-dat100<- read_csv(here("data","OECD100.csv"))
+dat100<- read_csv(here::here("data","OECD100.csv"))
 dat100$ID.Ev <- paste(dat100$Strain,dat100$Ev,dat100$Rep,sep='.')
 hold1 <- dat100 %>% 
   filter(Strain == 1393) %>% 
@@ -2357,3 +2355,55 @@ s1.8<- ggplot(redf.corr.summ.50.2951.time,
     theme(legend.position = "none") 
 
 ```
+
+
+```{r}
+qaqc<-read_csv(here::here("data","QAQC_data_Jan2021 - Export data.csv"))
+
+plot(qaqc$RedF,qaqc$ChlperCell,pch=21,bg=c('gray80','black')[as.factor(qaqc$Strain)],xlab='Red Fluorescence (Guava)',ylab='Chlorophyll per cell (acetone)',las=1)
+legend(3000,.5,pch=21,pt.bg=c('gray80','black'),legend=c('1393','2951'))
+
+lm.redF.93 <- lm(ChlperCell~RedF,data=qaqc[qaqc$Strain==1393,])
+summary(lm.redF.93)
+
+lm.redF.51 <- lm(ChlperCell~RedF,data=qaqc[qaqc$Strain==2951,])
+summary(lm.redF.51)
+
+lm.93<-qaqc %>% 
+  filter(Strain == "1393") 
+
+lm_eqn93 <- function(lm.93){
+    m <- lm(ChlperCell ~ RedF, lm.93);
+    eq <- substitute("Strain 1393:"~~italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(unname(coef(m)[1]), digits = 2),
+              b = format(unname(coef(m)[2]), digits = 2),
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+}
+lm.51<-qaqc %>% 
+  filter(Strain == "2951") 
+
+lm_eqn51 <- function(lm.51){
+    m <- lm(ChlperCell ~ RedF, lm.51);
+    eq <- substitute("Strain 2951:"~~italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(unname(coef(m)[1]), digits = 2),
+              b = format(unname(coef(m)[2]), digits = 2),
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+}
+
+
+
+ggplot(qaqc, aes(x = RedF, y = ChlperCell, fill = as.factor(Strain)))+
+  geom_point(size = 2.5, shape = 21) +
+  scale_fill_manual(values = c("gray80","black")) +
+  geom_abline(intercept = coefficients(lm.redF.93)[1], slope = coefficients(lm.redF.93)[2], color = "gray80") +
+  geom_abline(intercept = coefficients(lm.redF.51)[1], slope = coefficients(lm.redF.51)[2], color = "black")  +
+theme(legend.position = "NONE",
+       axis.ticks.length = unit(.10, "cm")) +
+labs( y ="Chlorophyll per cell", x="Red fluorescence") +
+   geom_text(x = 3000, y = .5, label = lm_eqn93(lm.93), parse = TRUE, color = "gray50", hjust = "left", size = 3.5)+
+  geom_text(x = 3000, y = .45, label = lm_eqn51(lm.51), parse = TRUE, hjust= "left", size = 3.5)
+
+```
+
