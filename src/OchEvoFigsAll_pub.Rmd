@@ -866,6 +866,141 @@ CUE.summ.50<- summarySE(data=cue.gr.avg.50,measurevar='CUE',groupvars=c('Strain'
 
 ```
 
+T-testing for Fig 3
+
+```{r}
+### EDITING IN PROGRESS
+# TTEST FOR LOOP
+ttest.df.100.2 <- growths100_last3 %>% 
+  filter(Strain != 1391) %>% 
+  select( ID, Strain, Ev, Acc, Rep, Week, Growth.del, redf.del, fvfm.del) %>% 
+  filter(Ev==Acc) %>% 
+  filter(Ev != 24)
+ttest.df.100.2$group <- paste(ttest.df.100.2$Strain,ttest.df.100.2$Ev,ttest.df.100.2$Acc,sep='.')
+
+pvals.df.100.2 <- as.data.frame(unique(ttest.df.100$group))
+names(pvals.df.100.2) <- 'group'
+pvals.df.100.2$Strain <- ttest.df.100.2$Strain[match(pvals.df.100.2$group,ttest.df.100.2$group)]
+pvals.df.100.2$Ev <- ttest.df.100.2$Ev[match(pvals.df.100.2$group,ttest.df.100.2$group)]
+pvals.df.100.2$Acc <- ttest.df.100.2$Acc[match(pvals.df.100.2$group,ttest.df.100.2$group)]
+pvals.df.100.2$p.value.gr <- NA
+pvals.df.100.2$p.value.redf <- NA
+pvals.df.100.2$p.value.fvfm <- NA
+#GR
+for(i in 1:dim(pvals.df.100.2)[1]){
+  hold <-ttest.df.100.2[ttest.df.100.2$group==pvals.df.100.2$group[i],] %>% 
+    pull(Growth.del)
+  hold.ttest <- t.test(hold)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.2$p.value.gr[i] <- round(tidy.hold$p.value,3) }
+# REDF
+for(i in 1:dim(pvals.df.100.2)[1]){
+  hold <-ttest.df.100.2[ttest.df.100.2$group==pvals.df.100.2$group[i],] %>% 
+    pull(redf.del)
+  hold.ttest <- t.test(hold)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.2$p.value.redf[i] <- round(tidy.hold$p.value,3) }
+#FVFM
+for(i in 1:dim(pvals.df.100.2)[1]){
+  hold <-ttest.df.100.2[ttest.df.100.2$group==pvals.df.100.2$group[i],] %>% 
+    pull(fvfm.del)
+  hold.ttest <- t.test(hold)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.2$p.value.fvfm[i] <- round(tidy.hold$p.value,3) }
+
+## CN
+ttest.df.100.cn <- cn.100_last3 %>% 
+  filter(Strain != 1391) %>% 
+  select( ID, Strain, Ev, Acc, Rep, Week, C.del, N.del) %>% 
+  filter(Ev==Acc) %>% 
+  filter(Ev != 24)
+ttest.df.100.cn$group <- paste(ttest.df.100.cn$Strain,ttest.df.100.cn$Ev,ttest.df.100.cn$Acc,sep='.')
+pvals.df.100.2$p.value.c <- NA
+# C
+for(i in 1:dim(pvals.df.100.2)[1]){
+  hold <-ttest.df.100.cn[ttest.df.100.cn$group==pvals.df.100.2$group[i],] %>% 
+    pull(C.del)
+  hold.ttest <- t.test(hold)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.2$p.value.c[i] <- round(tidy.hold$p.value,3) }
+
+## Resp
+ttest.df.100.resp <- resp.100_last3 %>% 
+  filter(Strain != 1391) %>% 
+  select( ID, Strain, Ev, Acc, Rep, Week, Resp.del, Photo.del) %>% 
+  filter(Ev==Acc) %>% 
+  filter(Ev != 24) %>% 
+  filter(!is.na(Resp.del))
+ttest.df.100.resp$group <- paste(ttest.df.100.resp$Strain,ttest.df.100.resp$Ev,ttest.df.100.resp$Acc,sep='.')
+pvals.df.100.2$p.value.resp <- NA
+pvals.df.100.2$p.value.photo <- NA
+# resp
+for(i in 1:dim(pvals.df.100.2)[1]){
+  hold <-ttest.df.100.resp[ttest.df.100.resp$group==pvals.df.100.2$group[i],] %>% 
+    pull(Resp.del)
+  hold.ttest <- t.test(hold)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.2$p.value.resp[i] <- round(tidy.hold$p.value,3) }
+# photo
+for(i in 1:dim(pvals.df.100.2)[1]){
+  hold <-ttest.df.100.resp[ttest.df.100.resp$group==pvals.df.100.2$group[i],] %>% 
+    pull(Photo.del)
+  hold.ttest <- t.test(hold)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.2$p.value.photo[i] <- round(tidy.hold$p.value,3) }
+
+## Graz
+ttest.df.100.graz <- graz100_last3 %>% 
+  filter(Strain != 1391) %>% 
+  select( ID, Strain, Ev, Acc, Rep, Week, Grazing.del) %>% 
+  filter(Ev==Acc) %>% 
+  filter(Ev != 24) %>% 
+  filter(!is.na(Grazing.del))
+ttest.df.100.graz$group <- paste(ttest.df.100.graz$Strain,ttest.df.100.graz$Ev,ttest.df.100.graz$Acc,sep='.')
+pvals.df.100.2$p.value.graz <- NA
+
+# graz
+for(i in 1:dim(pvals.df.100.2)[1]){
+  hold <-ttest.df.100.graz[ttest.df.100.graz$group==pvals.df.100.2$group[i],] %>% 
+    pull(Grazing.del)
+  hold.ttest <- t.test(hold)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.2$p.value.graz[i] <- round(tidy.hold$p.value,3) }
+
+# ## CUE
+# ttest.df.100.cue <- cue.gr.avg.100 %>% 
+#   filter(Strain != 1391) %>% 
+#   select( ID, Strain, Ev, Acc, Rep, Week, Grazing.del) %>% 
+#   filter(Ev==Acc) %>% 
+#   filter(Ev != 24) %>% 
+#   filter(!is.na(Grazing.del))
+# ttest.df.100.cue$group <- paste(ttest.df.100.cue$Strain,ttest.df.100.cue$Ev,ttest.df.100.cue$Acc,sep='.')
+# pvals.df.100.2$p.value.cue <- NA
+# 
+# # cue
+# for(i in 1:dim(pvals.df.100.2)[1]){
+#   hold <-ttest.df.100.cue[ttest.df.100.cue$group==pvals.df.100.2$group[i],] %>% 
+#     pull(Grazing.del)
+#   hold.ttest <- t.test(hold)
+#   tidy.hold <- tidy(hold.ttest)
+#   pvals.df.100.2$p.value.cue[i] <- round(tidy.hold$p.value,3) }
+# 
+
+
+
+#   
+# pvals.df.100.2 <- pvals.df.100.2 %>% 
+#   mutate(signif.alpha = case_when(
+#     pvals.df.100.2$p.value <= .001 ~ 1,
+#     pvals.df.100.2$p.value >.001 & pvals.df.100.2$p.value <= .01 ~ .75,
+#     pvals.df.100.2$p.value > .01 & pvals.df.100.2$p.value <= .05 ~ .5,
+#     pvals.df.100.2$p.value > .05 ~ 0
+#   ))
+
+
+```
+
+
 Plots 100uE 1393
 
 ```{r}
