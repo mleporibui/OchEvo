@@ -871,8 +871,1327 @@ CUE.summ.50<- summarySE(data=cue.gr.avg.50,measurevar='CUE',groupvars=c('Strain'
 T-testing for Fig 3
 
 ```{r}
-### EDITING IN PROGRESS
-# TTEST FOR LOOP
+# test the difference between 
+# 100
+ttest.df.100.3 <- growths100_last3 %>% 
+  filter(Strain != 1391) %>% 
+  select( ID, Strain, Ev, Acc, Rep, Week, Growth.Rate, Growth.Rate.ref,redf,redf.ref,fvfm,fvfm.ref) %>% 
+  filter(Ev==Acc) %>% 
+  filter(Ev != 24)
+ttest.df.100.3$group <- paste(ttest.df.100.3$Strain,ttest.df.100.3$Ev,ttest.df.100.3$Acc,sep='.')
+pvals.df.100.3 <- as.data.frame(unique(ttest.df.100.3$group))
+names(pvals.df.100.3) <- 'group'
+pvals.df.100.3$Strain <- ttest.df.100.3$Strain[match(pvals.df.100.3$group,ttest.df.100.3$group)]
+pvals.df.100.3$Ev <- ttest.df.100.3$Ev[match(pvals.df.100.3$group,ttest.df.100.3$group)]
+pvals.df.100.3$Acc <- ttest.df.100.3$Acc[match(pvals.df.100.3$group,ttest.df.100.3$group)]
+pvals.df.100.3$p.value.growth <- NA
+pvals.df.100.3$p.value.redf <- NA
+pvals.df.100.3$p.value.fvfm <- NA
+#GR 2 sample
+for(i in 1:dim(pvals.df.100.3)[1]){
+  hold1 <-ttest.df.100.3[ttest.df.100.3$group==pvals.df.100.3$group[i],] %>% 
+    pull(Growth.Rate)
+   hold2 <-ttest.df.100.3[ttest.df.100.3$group==pvals.df.100.3$group[i],] %>% 
+    pull(Growth.Rate.ref)
+  hold.ttest <- t.test(hold1,hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.3$p.value.growth[i] <- round(tidy.hold$p.value,3) }
+
+# REDF
+for(i in 1:dim(pvals.df.100.3)[1]){
+  hold1 <-ttest.df.100.3[ttest.df.100.3$group==pvals.df.100.3$group[i],] %>% 
+    pull(redf)
+  hold2 <-ttest.df.100.3[ttest.df.100.3$group==pvals.df.100.3$group[i],] %>% 
+    pull(redf.ref)
+  hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.3$p.value.redf[i] <- round(tidy.hold$p.value,3) }
+#FVFM
+for(i in 1:dim(pvals.df.100.3)[1]){
+  hold1 <-ttest.df.100.3[ttest.df.100.3$group==pvals.df.100.3$group[i],] %>% 
+    pull(fvfm)
+   hold2 <-ttest.df.100.3[ttest.df.100.3$group==pvals.df.100.3$group[i],] %>% 
+    pull(fvfm.ref)
+   hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.3$p.value.fvfm[i] <- round(tidy.hold$p.value,3) }
+
+## CN
+ttest.df.100.cn <- cn.100_last3 %>% 
+  filter(Strain != 1391) %>% 
+  select( ID, Strain, Ev, Acc, Rep, Week, C, C.ref, N, N.ref) %>% 
+  filter(Ev==Acc) %>% 
+  filter(Ev != 24)
+ttest.df.100.cn$group <- paste(ttest.df.100.cn$Strain,ttest.df.100.cn$Ev,ttest.df.100.cn$Acc,sep='.')
+pvals.df.100.3$p.value.c <- NA
+# C
+for(i in 1:dim(pvals.df.100.3)[1]){
+  hold1 <-ttest.df.100.cn[ttest.df.100.cn$group==pvals.df.100.3$group[i],] %>% 
+    pull(C)
+  hold2 <-ttest.df.100.cn[ttest.df.100.cn$group==pvals.df.100.3$group[i],] %>% 
+    pull(C.ref)
+  hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.3$p.value.c[i] <- round(tidy.hold$p.value,3) }
+
+## Resp
+ttest.df.100.resp <- resp.100_last3 %>% 
+  filter(Strain != 1391) %>% 
+  select( ID, Strain, Ev, Acc, Rep, Week, Resp, Resp.ref, Photo, Photo.ref) %>% 
+  filter(Ev==Acc) %>% 
+  filter(Ev != 24) %>% 
+  filter(!is.na(Resp.ref))
+ttest.df.100.resp$group <- paste(ttest.df.100.resp$Strain,ttest.df.100.resp$Ev,ttest.df.100.resp$Acc,sep='.')
+pvals.df.100.3$p.value.resp <- NA
+pvals.df.100.3$p.value.photo <- NA
+# resp
+for(i in 1:dim(pvals.df.100.3)[1]){
+  hold1 <-ttest.df.100.resp[ttest.df.100.resp$group==pvals.df.100.3$group[i],] %>% 
+    pull(Resp)
+  hold2 <-ttest.df.100.resp[ttest.df.100.resp$group==pvals.df.100.3$group[i],] %>% 
+    pull(Resp.ref)
+  hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.3$p.value.resp[i] <- round(tidy.hold$p.value,3) }
+# photo
+for(i in 1:dim(pvals.df.100.3)[1]){
+  hold1 <-ttest.df.100.resp[ttest.df.100.resp$group==pvals.df.100.3$group[i],] %>% 
+    pull(Photo)
+  hold2 <-ttest.df.100.resp[ttest.df.100.resp$group==pvals.df.100.3$group[i],] %>% 
+    pull(Photo.ref)
+  hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.3$p.value.photo[i] <- round(tidy.hold$p.value,3) }
+
+## Graz
+ttest.df.100.graz <- graz100_last3 %>% 
+  filter(Strain != 1391) %>% 
+  select( ID, Strain, Ev, Acc, Rep, Week, graz, graz.ref) %>% 
+  filter(Ev==Acc) %>% 
+  filter(Ev != 24) %>% 
+  filter(!is.na(graz.ref))
+ttest.df.100.graz$group <- paste(ttest.df.100.graz$Strain,ttest.df.100.graz$Ev,ttest.df.100.graz$Acc,sep='.')
+pvals.df.100.3$p.value.graz <- NA
+
+# graz
+for(i in 1:dim(pvals.df.100.3)[1]){
+  hold1 <-ttest.df.100.graz[ttest.df.100.graz$group==pvals.df.100.3$group[i],] %>% 
+    pull(graz)
+  hold2 <-ttest.df.100.graz[ttest.df.100.graz$group==pvals.df.100.3$group[i],] %>% 
+    pull(graz.ref)
+  hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.3$p.value.graz[i] <- round(tidy.hold$p.value,3) }
+
+## CUE
+
+CUE100_last3_del<- cue.gr.avg.100 
+CUE100_last3_del$Treat.Acc <- paste(CUE100_last3_del$Strain,CUE100_last3_del$Acc,CUE100_last3_del$Rep,sep='.')
+
+CUE100_hold<-cue.gr.avg.100 %>% 
+  filter(Ev == 24)
+CUE100_hold$Treat.Acc <- paste(CUE100_hold$Strain,CUE100_hold$Acc,CUE100_hold$Rep,sep='.')
+
+CUE100_last3_del$cue.ref <- CUE100_hold$CUE[match(CUE100_last3_del$Treat.Acc,CUE100_hold[CUE100_hold$Ev==24,]$Treat.Acc)] 
+
+CUE100_last3_del <- CUE100_last3_del[!is.na(CUE100_last3_del$cue.ref),]
+
+# Match evolved & ancestral reference points
+CUE100_last3_del$cue.propdel <- (CUE100_last3_del$CUE-CUE100_last3_del$cue.ref)/abs(CUE100_last3_del$cue.ref) # Compute rel. difference
+CUE100_last3_del$cue.del <- (CUE100_last3_del$CUE-CUE100_last3_del$cue.ref) # Compute abs difference
+
+## CUE
+ttest.df.100.cue <- CUE100_last3_del %>%
+  select( ID, Strain, Ev, Acc, Rep, CUE, cue.ref) %>%
+  filter(Ev==Acc) %>%
+  filter(Ev != 24) %>%
+  filter(!is.na(cue.ref))
+ttest.df.100.cue$group <- paste(ttest.df.100.cue$Strain,ttest.df.100.cue$Ev,ttest.df.100.cue$Acc,sep='.')
+pvals.df.100.3$p.value.cue <- NA
+
+# cue
+for(i in 1:dim(pvals.df.100.3)[1]){
+  hold1 <-ttest.df.100.cue[ttest.df.100.cue$group==pvals.df.100.3$group[i],] %>%
+    pull(CUE)
+  hold2 <-ttest.df.100.cue[ttest.df.100.cue$group==pvals.df.100.3$group[i],] %>%
+    pull(cue.ref)
+  hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.100.3$p.value.cue[i] <- round(tidy.hold$p.value,3) }
+
+
+## data frame of significance
+
+pvals.df.100.3.sig <- pvals.df.100.3
+pvals.df.100.3.sig[ ,5:12][pvals.df.100.3.sig [,5:12] > .05] <- NA
+pvals.df.100.3.sig[ ,5:12][pvals.df.100.3.sig [,5:12] <=.001] <- "high"
+pvals.df.100.3.sig[ ,5:12][pvals.df.100.3.sig [,5:12] <=.01] <-"mid"
+pvals.df.100.3.sig[ ,5:12][pvals.df.100.3.sig [,5:12] <=.05] <-"low"
+
+pvals.df.100.3.sig[ ,5:12][pvals.df.100.3.sig [,5:12] == "high"] <- "***"
+pvals.df.100.3.sig[ ,5:12][pvals.df.100.3.sig [,5:12] =="mid"] <- "**"
+pvals.df.100.3.sig[ ,5:12][pvals.df.100.3.sig [,5:12] =="low"] <-  "*"
+ 
+# 50
+ttest.df.50.3 <- growths50_last3 %>% 
+  filter(Strain != 1391) %>% 
+  select( ID, Strain, Ev, Acc, Rep, Week, Growth.Rate, Growth.Rate.ref,redf,redf.ref,fvfm,fvfm.ref) %>% 
+  filter(Ev==Acc) %>% 
+  filter(Ev != 24)
+ttest.df.50.3$group <- paste(ttest.df.50.3$Strain,ttest.df.50.3$Ev,ttest.df.50.3$Acc,sep='.')
+pvals.df.50.3 <- as.data.frame(unique(ttest.df.50.3$group))
+names(pvals.df.50.3) <- 'group'
+pvals.df.50.3$Strain <- ttest.df.50.3$Strain[match(pvals.df.50.3$group,ttest.df.50.3$group)]
+pvals.df.50.3$Ev <- ttest.df.50.3$Ev[match(pvals.df.50.3$group,ttest.df.50.3$group)]
+pvals.df.50.3$Acc <- ttest.df.50.3$Acc[match(pvals.df.50.3$group,ttest.df.50.3$group)]
+pvals.df.50.3$p.value.growth <- NA
+pvals.df.50.3$p.value.redf <- NA
+pvals.df.50.3$p.value.fvfm <- NA
+#GR 2 sample
+for(i in 1:dim(pvals.df.50.3)[1]){
+  hold1 <-ttest.df.50.3[ttest.df.50.3$group==pvals.df.50.3$group[i],] %>% 
+    pull(Growth.Rate)
+   hold2 <-ttest.df.50.3[ttest.df.50.3$group==pvals.df.50.3$group[i],] %>% 
+    pull(Growth.Rate.ref)
+  hold.ttest <- t.test(hold1,hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.50.3$p.value.growth[i] <- round(tidy.hold$p.value,3) }
+
+# REDF
+for(i in 1:dim(pvals.df.50.3)[1]){
+  hold1 <-ttest.df.50.3[ttest.df.50.3$group==pvals.df.50.3$group[i],] %>% 
+    pull(redf)
+  hold2 <-ttest.df.50.3[ttest.df.50.3$group==pvals.df.50.3$group[i],] %>% 
+    pull(redf.ref)
+  hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.50.3$p.value.redf[i] <- round(tidy.hold$p.value,3) }
+#FVFM
+for(i in 1:dim(pvals.df.50.3)[1]){
+  hold1 <-ttest.df.50.3[ttest.df.50.3$group==pvals.df.50.3$group[i],] %>% 
+    pull(fvfm)
+   hold2 <-ttest.df.50.3[ttest.df.50.3$group==pvals.df.50.3$group[i],] %>% 
+    pull(fvfm.ref)
+   hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.50.3$p.value.fvfm[i] <- round(tidy.hold$p.value,3) }
+
+## CN
+ttest.df.50.cn <- cn.50_last3 %>% 
+  filter(Strain != 1391) %>% 
+  select( ID, Strain, Ev, Acc, Rep, Week, C, C.ref, N, N.ref) %>% 
+  filter(Ev==Acc) %>% 
+  filter(Ev != 24)
+ttest.df.50.cn$group <- paste(ttest.df.50.cn$Strain,ttest.df.50.cn$Ev,ttest.df.50.cn$Acc,sep='.')
+pvals.df.50.3$p.value.c <- NA
+# C
+for(i in 1:dim(pvals.df.50.3)[1]){
+  hold1 <-ttest.df.50.cn[ttest.df.50.cn$group==pvals.df.50.3$group[i],] %>% 
+    pull(C)
+  hold2 <-ttest.df.50.cn[ttest.df.50.cn$group==pvals.df.50.3$group[i],] %>% 
+    pull(C.ref)
+  hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.50.3$p.value.c[i] <- round(tidy.hold$p.value,3) }
+
+## Resp
+ttest.df.50.resp <- resp.50_last3 %>% 
+  filter(Strain != 1391) %>% 
+  select( ID, Strain, Ev, Acc, Rep, Week, Resp, Resp.ref, Photo, Photo.ref) %>% 
+  filter(Ev==Acc) %>% 
+  filter(Ev != 24) %>% 
+  filter(!is.na(Resp.ref))
+ttest.df.50.resp$group <- paste(ttest.df.50.resp$Strain,ttest.df.50.resp$Ev,ttest.df.50.resp$Acc,sep='.')
+pvals.df.50.3$p.value.resp <- NA
+pvals.df.50.3$p.value.photo <- NA
+# resp
+for(i in 1:dim(pvals.df.50.3)[1]){
+  hold1 <-ttest.df.50.resp[ttest.df.50.resp$group==pvals.df.50.3$group[i],] %>% 
+    pull(Resp)
+  hold2 <-ttest.df.50.resp[ttest.df.50.resp$group==pvals.df.50.3$group[i],] %>% 
+    pull(Resp.ref)
+  hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.50.3$p.value.resp[i] <- round(tidy.hold$p.value,3) }
+# photo
+for(i in 1:dim(pvals.df.50.3)[1]){
+  hold1 <-ttest.df.50.resp[ttest.df.50.resp$group==pvals.df.50.3$group[i],] %>% 
+    pull(Photo)
+  hold2 <-ttest.df.50.resp[ttest.df.50.resp$group==pvals.df.50.3$group[i],] %>% 
+    pull(Photo.ref)
+  hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.50.3$p.value.photo[i] <- round(tidy.hold$p.value,3) }
+
+## Graz
+ttest.df.50.graz <- graz50_last3 %>% 
+  filter(Strain != 1391) %>% 
+  select( ID, Strain, Ev, Acc, Rep, Week, graz, graz.ref) %>% 
+  filter(Ev==Acc) %>% 
+  filter(Ev != 24) %>% 
+  filter(!is.na(graz.ref))
+ttest.df.50.graz$group <- paste(ttest.df.50.graz$Strain,ttest.df.50.graz$Ev,ttest.df.50.graz$Acc,sep='.')
+pvals.df.50.3$p.value.graz <- NA
+
+# graz
+for(i in 1:dim(pvals.df.50.3)[1]){
+  hold1 <-ttest.df.50.graz[ttest.df.50.graz$group==pvals.df.50.3$group[i],] %>% 
+    pull(graz)
+  hold2 <-ttest.df.50.graz[ttest.df.50.graz$group==pvals.df.50.3$group[i],] %>% 
+    pull(graz.ref)
+  hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.50.3$p.value.graz[i] <- round(tidy.hold$p.value,3) }
+
+## CUE
+
+CUE50_last3_del<- cue.gr.avg.50 
+CUE50_last3_del$Treat.Acc <- paste(CUE50_last3_del$Strain,CUE50_last3_del$Acc,CUE50_last3_del$Rep,sep='.')
+
+CUE50_hold<-cue.gr.avg.50 %>% 
+  filter(Ev == 24)
+CUE50_hold$Treat.Acc <- paste(CUE50_hold$Strain,CUE50_hold$Acc,CUE50_hold$Rep,sep='.')
+
+CUE50_last3_del$cue.ref <- CUE50_hold$CUE[match(CUE50_last3_del$Treat.Acc,CUE50_hold[CUE50_hold$Ev==24,]$Treat.Acc)] 
+
+CUE50_last3_del <- CUE50_last3_del[!is.na(CUE50_last3_del$cue.ref),]
+
+# Match evolved & ancestral reference points
+CUE50_last3_del$cue.propdel <- (CUE50_last3_del$CUE-CUE50_last3_del$cue.ref)/abs(CUE50_last3_del$cue.ref) # Compute rel. difference
+CUE50_last3_del$cue.del <- (CUE50_last3_del$CUE-CUE50_last3_del$cue.ref) # Compute abs difference
+
+## CUE
+ttest.df.50.cue <- CUE50_last3_del %>%
+  select( ID, Strain, Ev, Acc, Rep, CUE, cue.ref) %>%
+  filter(Ev==Acc) %>%
+  filter(Ev != 24) %>%
+  filter(!is.na(cue.ref))
+ttest.df.50.cue$group <- paste(ttest.df.50.cue$Strain,ttest.df.50.cue$Ev,ttest.df.50.cue$Acc,sep='.')
+pvals.df.50.3$p.value.cue <- NA
+
+# cue
+for(i in 1:dim(pvals.df.50.3)[1]){
+  hold1 <-ttest.df.50.cue[ttest.df.50.cue$group==pvals.df.50.3$group[i],] %>%
+    pull(CUE)
+  hold2 <-ttest.df.50.cue[ttest.df.50.cue$group==pvals.df.50.3$group[i],] %>%
+    pull(cue.ref)
+  hold.ttest <- t.test(hold1, hold2)
+  tidy.hold <- tidy(hold.ttest)
+  pvals.df.50.3$p.value.cue[i] <- round(tidy.hold$p.value,3) }
+
+
+## data frame of significance
+
+pvals.df.50.3.sig <- pvals.df.50.3
+pvals.df.50.3.sig[ ,5:12][pvals.df.50.3.sig [,5:12] > .05] <- NA
+pvals.df.50.3.sig[ ,5:12][pvals.df.50.3.sig [,5:12] <=.001] <- "high"
+pvals.df.50.3.sig[ ,5:12][pvals.df.50.3.sig [,5:12] <=.01] <-"mid"
+pvals.df.50.3.sig[ ,5:12][pvals.df.50.3.sig [,5:12] <=.05] <-"low"
+
+pvals.df.50.3.sig[ ,5:12][pvals.df.50.3.sig [,5:12] == "high"] <- "***"
+pvals.df.50.3.sig[ ,5:12][pvals.df.50.3.sig [,5:12] =="mid"] <- "**"
+pvals.df.50.3.sig[ ,5:12][pvals.df.50.3.sig [,5:12] =="low"] <-  "*"
+
+
+
+
+
+```
+
+
+Plots 100uE 1393
+
+```{r}
+theme_set(theme_base(base_size = 10)) 
+theme_update(plot.background=element_blank())
+
+#limits
+growth.y <- c(0,1)
+CUE.y <- c(0, .7)
+C.y <- c(0,30)
+redf.y <-c(0,1)
+phot.y <- c(0,20)
+graz.y <- c(0,3)
+resp.y <- c(0,60)
+
+labelcex <- 10
+sigsize <- 5
+
+#Growth rate of 1393 at 100 by acclimation temperature with experimental lineages in blue and red and control lineages in gray
+strainchoice <- 1393
+lightchoice <- 100
+
+points.sig <- pvals.df.100.3.sig %>% 
+  filter(Strain == strainchoice) 
+
+#cue
+a0 <- ggplot(subset(CUE.summ.100, Ev==Acc & Strain == strainchoice), 
+             aes(x = Acc, y=CUE, color=as.factor(Ev))) + 
+  geom_errorbar(aes(ymin = CUE-se, ymax = CUE+se), width=.2) +
+  scale_color_manual(values = newcols) +
+  scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  scale_y_continuous(limits = c(-.3,1.025))+
+  theme(legend.position = "none",
+  axis.title.x = element_blank(),
+  axis.text.x = element_blank(),       
+  axis.text.y = element_text(size = labelcex),
+  axis.ticks.length = unit(.10, "cm"),
+  plot.margin = margin(.1, .1, .1, .5, "cm")) +
+  geom_line(color = "black") +
+  geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(CUE.summ.100, Ev==24 & Strain == strainchoice), 
+                aes(ymin=CUE-se, ymax=CUE+se, width = .2), color = "gray48") +
+  geom_line(data = subset(CUE.summ.100, Ev==24 & Strain == strainchoice), 
+              color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(CUE.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())  +
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.cue, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.cue, color = hcol2,  size = sigsize)
+
+#growth
+a1<-ggplot(subset(Growth.summ.100, Ev==Acc & Strain == strainchoice),
+           aes(x=Acc, y=Growth.Rate, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se), width=.2) +
+    scale_color_manual(values=newcols) +
+  scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Growth.summ.100, Ev==24 & Strain == strainchoice), 
+                aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Growth.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Growth.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes()) +
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.growth, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5,  label = points.sig[points.sig$Ev==30,]$p.value.growth, color = hcol2, size = sigsize)
+ 
+
+# Red f 
+a2<-ggplot(subset(redf.summ.100, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=redf, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=redf-se, ymax=redf+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(redf.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=redf-se, ymax=redf+se, width = .2), color = "gray48") +
+  geom_line(data = subset(redf.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(redf.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes()) +
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.redf, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.redf, color = hcol2, size = sigsize)
+
+
+# C
+a3<-ggplot(subset(C.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=C, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=C-se, ymax=C+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(C.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=C-se, ymax=C+se, width = .2), color = "gray48") +
+  geom_line(data = subset(C.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(C.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes()) +
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.c, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.c, color = hcol2, size = sigsize)
+
+# Resp
+a4 <- ggplot(subset(Resp.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Resp, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=Resp-se, ymax=Resp+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+ labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Resp.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=Resp-se, ymax=Resp+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Resp.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Resp.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.resp, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.resp, color = hcol2, size = sigsize)
+
+# Photo
+a5 <- ggplot(subset(Photo.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Photo, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=Photo-se, ymax=Photo+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+ theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Photo.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=Photo-se, ymax=Photo+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Photo.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Photo.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.photo, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.photo, color = hcol2, size = sigsize)
+
+# Graz
+a6 <- ggplot(subset(Graz.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=graz, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=graz-se, ymax=graz+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+ labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Graz.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=graz-se, ymax=graz+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Graz.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Graz.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.graz, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.graz, color = hcol2, size = sigsize)
+
+# fvfm
+a7<-ggplot(subset(fvfm.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=fvfm, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=fvfm-se, ymax=fvfm+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(fvfm.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=fvfm-se, ymax=fvfm+se, width = .2), color = "gray48") +
+  geom_line(data = subset(fvfm.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(fvfm.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.fvfm, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.fvfm, color = hcol2, size = sigsize)
+
+# N
+a8<-ggplot(subset(N.summ.100.2, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=N, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=N-se, ymax=N+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice),aes(ymin=N-se, ymax=N+se, width = .2), color = "gray48") +
+  geom_line(data = subset(N.summ.100.2, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice), color = "gray48", aes()) 
+
+
+```
+
+Plots 2951 at 100
+
+```{r}
+settheme <- theme_set(theme_base(base_size = 10)) +
+  theme_update(plot.background=element_blank())
+
+theme_set(settheme)
+
+
+#Growth rate of 2951 at 100 by acclimation temperature with experimental lineages in blue and red and control lineages in gray
+strainchoice <- 2951
+lightchoice <- 100
+
+points.sig <- pvals.df.100.3.sig %>% 
+  filter(Strain == strainchoice) 
+
+#cue
+b0 <- ggplot(subset(CUE.summ.100, Ev==Acc & Strain == strainchoice), 
+             aes(x=Acc, y=CUE, color=as.factor(Ev))) + 
+  geom_errorbar(aes(ymin=CUE-se, ymax=CUE+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+   scale_y_continuous(limits = c(.75,.98))+
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(CUE.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=CUE-se, ymax=CUE+se, width = .2), color = "gray48") +
+  geom_line(data = subset(CUE.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(CUE.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21, y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.cue, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.cue, color = hcol2, size = sigsize)
+
+#growth
+b1<-ggplot(subset(Growth.summ.100, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=Growth.Rate, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se), width=.2) +
+    scale_color_manual(values=newcols) +
+  scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+ theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Growth.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Growth.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Growth.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.growth, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.growth, color = hcol2, size = sigsize)
+ 
+
+# Red f 
+b2<-ggplot(subset(redf.summ.100, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=redf, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=redf-se, ymax=redf+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(redf.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=redf-se, ymax=redf+se, width = .2), color = "gray48") +
+  geom_line(data = subset(redf.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(redf.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21, y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.redf, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.redf, color = hcol2, size = sigsize)
+
+
+# C
+b3<-ggplot(subset(C.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=C, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=C-se, ymax=C+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(C.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=C-se, ymax=C+se, width = .2), color = "gray48") +
+  geom_line(data = subset(C.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(C.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.c, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.c, color = hcol2, size = sigsize)
+
+# Resp
+b4 <- ggplot(subset(Resp.summ.100, Ev==Acc & Strain == strainchoice), 
+             aes(x=Acc, y=Resp, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=Resp-se, ymax=Resp+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+ theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),      
+      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Resp.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=Resp-se, ymax=Resp+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Resp.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Resp.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.resp, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.resp, color = hcol2, size = sigsize)
+
+# Photo
+b5 <- ggplot(subset(Photo.summ.100, Ev==Acc & Strain == strainchoice), 
+             aes(x=Acc, y=Photo, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=Photo-se, ymax=Photo+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Photo.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=Photo-se, ymax=Photo+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Photo.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Photo.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.photo, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.photo, color = hcol2, size = sigsize)
+
+# Graz
+b6 <- ggplot(subset(Graz.summ.100, Ev==Acc & Strain == strainchoice), 
+             aes(x=Acc, y=graz, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=graz-se, ymax=graz+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+ theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Graz.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=graz-se, ymax=graz+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Graz.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Graz.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.graz, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.graz, color = hcol2, size = sigsize)
+
+# fvfm
+b7<-ggplot(subset(fvfm.summ.100, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=fvfm, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=fvfm-se, ymax=fvfm+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+ labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(fvfm.summ.100, Ev==24 & Strain == strainchoice),
+                aes(ymin=fvfm-se, ymax=fvfm+se, width = .2), color = "gray48") +
+  geom_line(data = subset(fvfm.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(fvfm.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.fvfm, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.fvfm, color = hcol2, size = sigsize)
+
+# N
+b8<-ggplot(subset(N.summ.100.2, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=N, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=N-se, ymax=N+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice),aes(ymin=N-se, ymax=N+se, width = .2), color = "gray48") +
+  geom_line(data = subset(N.summ.100.2, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice), color = "gray48", aes())
+
+```
+
+Plots 1393 at 50 
+
+```{r}
+theme_set(theme_base(base_size = 10)) 
+# theme_update(plot.background=element_blank(),
+#              axis.title.y=element_blank(),
+#              axis.text.y=element_blank())
+
+
+
+#Growth rate of 1393 at 50 by acclimation temperature with experimental lineages in blue and red and control lineages in gray
+strainchoice <- 1393
+lightchoice <- 50
+
+points.sig <- pvals.df.50.3.sig %>% 
+  filter(Strain == strainchoice) 
+
+#CUE
+c0 <- ggplot(subset(CUE.summ.50, Ev==Acc & Strain == strainchoice), 
+             aes(x=Acc, y=CUE, color=as.factor(Ev))) + 
+  geom_errorbar(aes(ymin=CUE-se, ymax=CUE+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = c(.8,.9))+
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+ labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(CUE.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=CUE-se, ymax=CUE+se, width = .2), color = "gray48") +
+  geom_line(data = subset(CUE.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(CUE.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.cue, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.cue, color = hcol2, size = sigsize)
+
+#growth
+c1<-ggplot(subset(Growth.summ.50, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=Growth.Rate, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se), width=.2) +
+    scale_color_manual(values=newcols) +
+  scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+ labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Growth.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Growth.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Growth.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.growth, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.growth, color = hcol2, size = sigsize)
+ 
+
+# Red f 
+c2<-ggplot(subset(redf.summ.50, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=redf, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=redf-se, ymax=redf+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+ theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),      
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+ labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(redf.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=redf-se, ymax=redf+se, width = .2), color = "gray48") +
+  geom_line(data = subset(redf.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(redf.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.redf, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.redf, color = hcol2, size = sigsize)
+
+
+# C
+c3<-ggplot(subset(C.summ.50, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=C, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=C-se, ymax=C+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+ theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),      
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(C.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=C-se, ymax=C+se, width = .2), color = "gray48") +
+  geom_line(data = subset(C.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(C.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.c, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.c, color = hcol2, size = sigsize)
+
+# Resp
+c4 <- ggplot(subset(Resp.summ.50, Ev==Acc & Strain == strainchoice), 
+             aes(x=Acc, y=Resp, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=Resp-se, ymax=Resp+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+      axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")  ) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Resp.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=Resp-se, ymax=Resp+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Resp.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Resp.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.resp, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.resp, color = hcol2, size = sigsize)
+
+# Photo
+c5 <- ggplot(subset(Photo.summ.50, Ev==Acc & Strain == strainchoice), 
+             aes(x=Acc, y=Photo, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=Photo-se, ymax=Photo+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Photo.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=Photo-se, ymax=Photo+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Photo.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Photo.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21, y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.photo, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.photo, color = hcol2, size = sigsize)
+
+# Graz
+c6 <- ggplot(subset(Graz.summ.50, Ev==Acc & Strain == strainchoice), 
+             aes(x=Acc, y=graz, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=graz-se, ymax=graz+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+ theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),      
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Graz.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=graz-se, ymax=graz+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Graz.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Graz.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.graz, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.graz, color = hcol2, size = sigsize)
+
+# fvfm
+c7<-ggplot(subset(fvfm.summ.50, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=fvfm, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=fvfm-se, ymax=fvfm+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(fvfm.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=fvfm-se, ymax=fvfm+se, width = .2), color = "gray48") +
+  geom_line(data = subset(fvfm.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(fvfm.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.fvfm, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.fvfm, color = hcol2, size = sigsize)
+
+# N
+c8<-ggplot(subset(N.summ.100.2, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=N, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=N-se, ymax=N+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),      
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice),
+                aes(ymin=N-se, ymax=N+se, width = .2), color = "gray48") +
+  geom_line(data = subset(N.summ.100.2, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice), color = "gray48", aes())
+
+
+```
+
+Plots 2951 at 50
+
+```{r}
+
+#Growth rate of 2951 at 50 by acclimation temperature with experimental lineages in blue and red and control lineages in gray
+strainchoice <- 2951
+lightchoice <- 50
+
+points.sig <- pvals.df.50.3.sig %>% 
+  filter(Strain == strainchoice) 
+
+#cue
+d0 <- ggplot(subset(CUE.summ.50, Ev==Acc & Strain == strainchoice), 
+             aes(x=Acc, y=CUE, color=as.factor(Ev))) + 
+  geom_errorbar(aes(ymin=CUE-se, ymax=CUE+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),      
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(CUE.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=CUE-se, ymax=CUE+se, width = .2), color = "gray48") +
+  geom_line(data = subset(CUE.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(CUE.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.cue, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.cue, color = hcol2, size = sigsize)
+
+#growth
+d1<-ggplot(subset(Growth.summ.50, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=Growth.Rate, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se), width=.2) +
+    scale_color_manual(values=newcols) +
+  scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+ theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+ labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Growth.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Growth.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Growth.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.growth, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.growth, color = hcol2, size = sigsize)
+ 
+
+# Red f 
+d2<-ggplot(subset(redf.summ.50, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=redf, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=redf-se, ymax=redf+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+ labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(redf.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=redf-se, ymax=redf+se, width = .2), color = "gray48") +
+  geom_line(data = subset(redf.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(redf.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.redf, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.redf, color = hcol2, size = sigsize)
+
+
+# C
+d3<-ggplot(subset(C.summ.50, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=C, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=C-se, ymax=C+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(C.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=C-se, ymax=C+se, width = .2), color = "gray48") +
+  geom_line(data = subset(C.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(C.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.c, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.c, color = hcol2, size = sigsize)
+
+# Resp
+d4 <- ggplot(subset(Resp.summ.50, Ev==Acc & Strain == strainchoice), 
+             aes(x=Acc, y=Resp, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=Resp-se, ymax=Resp+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+   theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Resp.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=Resp-se, ymax=Resp+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Resp.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Resp.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.resp, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.resp, color = hcol2, size = sigsize)
+
+# Photo
+d5 <- ggplot(subset(Photo.summ.50, Ev==Acc & Strain == strainchoice), 
+             aes(x=Acc, y=Photo, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=Photo-se, ymax=Photo+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Photo.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=Photo-se, ymax=Photo+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Photo.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Photo.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.photo, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.photo, color = hcol2, size = sigsize)
+
+# Graz
+d6 <- ggplot(subset(Graz.summ.50, Ev==Acc & Strain == strainchoice), 
+             aes(x=Acc, y=graz, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=graz-se, ymax=graz+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+  theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(Graz.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=graz-se, ymax=graz+se, width = .2), color = "gray48") +
+  geom_line(data = subset(Graz.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(Graz.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
+  annotate("text", x= 21, y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.graz, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.graz, color = hcol2, size = sigsize)
+
+
+# fvfm
+d7<-ggplot(subset(fvfm.summ.50, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=fvfm, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=fvfm-se, ymax=fvfm+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+ theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       
+      plot.margin = margin(.1, .1, .1, .5, "cm")) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+  labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(fvfm.summ.50, Ev==24 & Strain == strainchoice),
+                aes(ymin=fvfm-se, ymax=fvfm+se, width = .2), color = "gray48") +
+  geom_line(data = subset(fvfm.summ.50, Ev==24 &Strain == strainchoice), 
+            color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(fvfm.summ.50, Ev==24 & Strain == strainchoice), 
+             color = "gray48", aes())+
+  annotate("text", x= 21,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.fvfm, color = lcol2, size = sigsize) +
+  annotate("text", x= 27,  y = Inf, vjust = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.fvfm, color = hcol2, size = sigsize)
+
+# N
+d8<-ggplot(subset(N.summ.100.2, Ev==Acc & Strain == strainchoice), 
+           aes(x=Acc, y=N, color=as.factor(Ev))) + 
+    geom_errorbar(aes(ymin=N-se, ymax=N+se), width=.2) +
+    scale_color_manual(values=newcols) +
+    scale_x_continuous(limits = c(17,31),
+                     breaks = c(18,24,30),
+                     expand = c(0,0)) +
+theme(legend.position = "none",
+      axis.title.x=element_blank(),
+      axis.text.x=element_blank(),       
+      axis.text.y=element_text(size = labelcex),
+       axis.ticks.length = unit(.10, "cm"),       plot.margin = margin(.1, .1, .1, .5, "cm")
+      ) +
+    geom_line(color = "black") +
+    geom_point(size=3, aes()) +
+labs( y = NULL, x=NULL) +
+  geom_errorbar(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice),aes(ymin=N-se, ymax=N+se, width = .2), color = "gray48") +
+  geom_line(data = subset(N.summ.100.2, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
+  geom_point(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice), color = "gray48", aes())
+
+
+```
+
+Arrange all plots
+
+```{r, fig.height=4.5, fig.width=4}
+
+theme_set(theme_base(base_size = 10)) 
+theme_update(plot.background=element_blank())
+ 
+# 1 growth rate
+# 3 c cell
+# 0 cue
+# 4 resp
+# 5 photo
+# 6 graz
+# 2 chla
+# 7 fvfm
+#8 N
+
+
+labelcex <- 10
+
+ggarrange(a1, c1, b1,  d1,
+          a3, c3, b3, d3,
+          a5, c5, b5, d5,
+          a6,c6,b6,d6,
+          a4, c4, b4,  d4,
+          a0,c0,b0,d0,
+          labels = c("A", "B", "C","D",
+                     "E","F","G","H",
+                     "I","J","K","L",
+                     "M","N","O","P",
+                     "Q","R","S","T",
+                     "U","V","W","X"),
+          font.label = list(size = 12, color = "black", family = NULL),
+          label.x = 0,
+          label.y = 1,
+          ncol = 4, nrow = 6, align="hv"  )
+
+# supplementary 1
+ggarrange(a2, c2, b2,d2,
+  a7, c7, b7,d7,
+   labels = c("A", "B", "C","D",
+                     "E","F","G","H"),
+   font.label = list(size = 12, color = "black", family = NULL),
+          label.x = 0,
+          label.y = 1,
+          ncol = 4, nrow = 6, align="hv" )
+
+```
+
+### 1393 bar graphs of deltas
+###fig4
+
+```{r}
+# TTEST FOR LOOP for deltas compared to 0
 ttest.df.100.2 <- growths100_last3 %>% 
   filter(Strain != 1391) %>% 
   select( ID, Strain, Ev, Acc, Rep, Week, Growth.del, redf.del, fvfm.del) %>% 
@@ -1016,7 +2335,6 @@ pvals.df.100.2.sig[ ,5:12][pvals.df.100.2.sig [,5:12] == "high"] <- "***"
 pvals.df.100.2.sig[ ,5:12][pvals.df.100.2.sig [,5:12] =="mid"] <- "**"
 pvals.df.100.2.sig[ ,5:12][pvals.df.100.2.sig [,5:12] =="low"] <-  "*"
  
-
 
 ## repeat for 50 
 
@@ -1166,933 +2484,158 @@ pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] =="mid"] <- "**"
 pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] =="low"] <-  "*"
  
 
-
-
 ```
-
-
-Plots 100uE 1393
 
 ```{r}
-theme_set(theme_base(base_size = 10)) 
-theme_update(plot.background=element_blank())
-
-#limits
-growth.y <- c(0,1)
-CUE.y <- c(0, .7)
-C.y <- c(0,30)
-redf.y <-c(0,1)
-phot.y <- c(0,20)
-graz.y <- c(0,3)
-resp.y <- c(0,60)
-
-labelcex <- 10
-
-#Growth rate of 1393 at 100 by acclimation temperature with experimental lineages in blue and red and control lineages in gray
-strainchoice <- 1393
-lightchoice <- 100
-
-points.sig <- pvals.df.100.2.sig %>% 
-  filter(Strain == strainchoice) 
-
-a0 <- ggplot(subset(CUE.summ.100, Ev==Acc & Strain == strainchoice), 
-             aes(x = Acc, y=CUE, color=as.factor(Ev))) + 
-  geom_errorbar(aes(ymin = CUE-se, ymax = CUE+se), width=.2) +
-  scale_color_manual(values = newcols) +
-  scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-  axis.title.x = element_blank(),
-  axis.text.x = element_blank(),       
-  axis.text.y = element_text(size = labelcex),
-  axis.ticks.length = unit(.10, "cm"),
-  plot.margin = margin(.1, .1, .1, .5, "cm")) +
-  geom_line(color = "black") +
-  geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(CUE.summ.100, Ev==24 & Strain == strainchoice), 
-                aes(ymin=CUE-se, ymax=CUE+se, width = .2), color = "gray48") +
-  geom_line(data = subset(CUE.summ.100, Ev==24 & Strain == strainchoice), 
-              color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(CUE.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())  +
-  annotate("text", x= 18,  y = .5, label = points.sig[points.sig$Ev==18,]$p.value.cue) +
-  annotate("text", x= 30,  y = .5, label = points.sig[points.sig$Ev==30,]$p.value.cue)
-
-a1<-ggplot(subset(Growth.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Growth.Rate, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se), width=.2) +
-    scale_color_manual(values=newcols) +
-  scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       plot.margin = margin(.1, .1, .1, .5, "cm")
-      ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Growth.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Growth.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Growth.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes()) +
-  annotate("text", x= 18,  y = .15, label = points.sig[points.sig$Ev==18,]$p.value.growth) +
-  annotate("text", x= 30,  y = .15, label = points.sig[points.sig$Ev==30,]$p.value.growth)
- 
-
-# Red f 
-a2<-ggplot(subset(redf.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=redf, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=redf-se, ymax=redf+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       plot.margin = margin(.1, .1, .1, .5, "cm")
-      ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(redf.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=redf-se, ymax=redf+se, width = .2), color = "gray48") +
-  geom_line(data = subset(redf.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(redf.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes()) +
-  annotate("text", x= 18,  y = 16, label = points.sig[points.sig$Ev==18,]$p.value.redf) +
-  annotate("text", x= 30,  y = 16, label = points.sig[points.sig$Ev==30,]$p.value.redf)
-
-
-# C
-a3<-ggplot(subset(C.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=C, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=C-se, ymax=C+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(C.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=C-se, ymax=C+se, width = .2), color = "gray48") +
-  geom_line(data = subset(C.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(C.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes()) +
-  annotate("text", x= 18,  y = 14, label = points.sig[points.sig$Ev==18,]$p.value.c) +
-  annotate("text", x= 30,  y = 14, label = points.sig[points.sig$Ev==30,]$p.value.c)
-
-# Resp
-a4 <- ggplot(subset(Resp.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Resp, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=Resp-se, ymax=Resp+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       plot.margin = margin(.1, .1, .1, .5, "cm")
-      ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
- labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Resp.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=Resp-se, ymax=Resp+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Resp.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Resp.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = 2, label = points.sig[points.sig$Ev==18,]$p.value.resp) +
-  annotate("text", x= 30,  y = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.resp)
-
-# Photo
-a5 <- ggplot(subset(Photo.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Photo, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=Photo-se, ymax=Photo+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
- theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       plot.margin = margin(.1, .1, .1, .5, "cm")
-      ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Photo.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=Photo-se, ymax=Photo+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Photo.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Photo.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .6, label = points.sig[points.sig$Ev==18,]$p.value.photo) +
-  annotate("text", x= 30,  y = .4, label = points.sig[points.sig$Ev==30,]$p.value.photo)
-
-# Graz
-a6 <- ggplot(subset(Graz.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=graz, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=graz-se, ymax=graz+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       plot.margin = margin(.1, .1, .1, .5, "cm")
-      ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
- labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Graz.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=graz-se, ymax=graz+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Graz.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Graz.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .12, label = points.sig[points.sig$Ev==18,]$p.value.graz) +
-  annotate("text", x= 30,  y = .12, label = points.sig[points.sig$Ev==30,]$p.value.graz)
-
-# fvfm
-a7<-ggplot(subset(fvfm.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=fvfm, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=fvfm-se, ymax=fvfm+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       plot.margin = margin(.1, .1, .1, .5, "cm")
-      ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(fvfm.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=fvfm-se, ymax=fvfm+se, width = .2), color = "gray48") +
-  geom_line(data = subset(fvfm.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(fvfm.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .425, label = points.sig[points.sig$Ev==18,]$p.value.fvfm) +
-  annotate("text", x= 30,  y = .425, label = points.sig[points.sig$Ev==30,]$p.value.fvfm)
-
-# N
-a8<-ggplot(subset(N.summ.100.2, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=N, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=N-se, ymax=N+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       plot.margin = margin(.1, .1, .1, .5, "cm")
-      ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice),aes(ymin=N-se, ymax=N+se, width = .2), color = "gray48") +
-  geom_line(data = subset(N.summ.100.2, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice), color = "gray48", aes())
-
+# ## repeat for 50 
+# 
+# # TTEST FOR LOOP
+# ttest.df.50.2 <- growths50_last3 %>% 
+#   filter(Strain != 1391) %>% 
+#   select( ID, Strain, Ev, Acc, Rep, Week, Growth.del, redf.del, fvfm.del) %>% 
+#   filter(Ev==Acc) %>% 
+#   filter(Ev != 24)
+# ttest.df.50.2$group <- paste(ttest.df.50.2$Strain,ttest.df.50.2$Ev,ttest.df.50.2$Acc,sep='.')
+# 
+# pvals.df.50.2 <- as.data.frame(unique(ttest.df.50.2$group))
+# names(pvals.df.50.2) <- 'group'
+# pvals.df.50.2$Strain <- ttest.df.50.2$Strain[match(pvals.df.50.2$group,ttest.df.50.2$group)]
+# pvals.df.50.2$Ev <- ttest.df.50.2$Ev[match(pvals.df.50.2$group,ttest.df.50.2$group)]
+# pvals.df.50.2$Acc <- ttest.df.50.2$Acc[match(pvals.df.50.2$group,ttest.df.50.2$group)]
+# pvals.df.50.2$p.value.growth <- NA
+# pvals.df.50.2$p.value.redf <- NA
+# pvals.df.50.2$p.value.fvfm <- NA
+# #GR
+# for(i in 1:dim(pvals.df.50.2)[1]){
+#   hold <-ttest.df.50.2[ttest.df.50.2$group==pvals.df.50.2$group[i],] %>% 
+#     pull(Growth.del)
+#   hold.ttest <- t.test(hold)
+#   tidy.hold <- tidy(hold.ttest)
+#   pvals.df.50.2$p.value.growth[i] <- round(tidy.hold$p.value,3) }
+# # REDF
+# for(i in 1:dim(pvals.df.50.2)[1]){
+#   hold <-ttest.df.50.2[ttest.df.50.2$group==pvals.df.50.2$group[i],] %>% 
+#     pull(redf.del)
+#   hold.ttest <- t.test(hold)
+#   tidy.hold <- tidy(hold.ttest)
+#   pvals.df.50.2$p.value.redf[i] <- round(tidy.hold$p.value,3) }
+# #FVFM
+# for(i in 1:dim(pvals.df.50.2)[1]){
+#   hold <-ttest.df.50.2[ttest.df.50.2$group==pvals.df.50.2$group[i],] %>% 
+#     pull(fvfm.del)
+#   hold.ttest <- t.test(hold)
+#   tidy.hold <- tidy(hold.ttest)
+#   pvals.df.50.2$p.value.fvfm[i] <- round(tidy.hold$p.value,3) }
+# 
+# ## CN
+# ttest.df.50.cn <- cn.50_last3 %>% 
+#   filter(Strain != 1391) %>% 
+#   select( ID, Strain, Ev, Acc, Rep, Week, C.del, N.del) %>% 
+#   filter(Ev==Acc) %>% 
+#   filter(Ev != 24)
+# ttest.df.50.cn$group <- paste(ttest.df.50.cn$Strain,ttest.df.50.cn$Ev,ttest.df.50.cn$Acc,sep='.')
+# pvals.df.50.2$p.value.c <- NA
+# # C
+# for(i in 1:dim(pvals.df.50.2)[1]){
+#   hold <-ttest.df.50.cn[ttest.df.50.cn$group==pvals.df.50.2$group[i],] %>% 
+#     pull(C.del)
+#   hold.ttest <- t.test(hold)
+#   tidy.hold <- tidy(hold.ttest)
+#   pvals.df.50.2$p.value.c[i] <- round(tidy.hold$p.value,3) }
+# 
+# ## Resp
+# ttest.df.50.resp <- resp.50_last3 %>% 
+#   filter(Strain != 1391) %>% 
+#   select( ID, Strain, Ev, Acc, Rep, Week, Resp.del, Photo.del) %>% 
+#   filter(Ev==Acc) %>% 
+#   filter(Ev != 24) %>% 
+#   filter(!is.na(Resp.del))
+# ttest.df.50.resp$group <- paste(ttest.df.50.resp$Strain,ttest.df.50.resp$Ev,ttest.df.50.resp$Acc,sep='.')
+# pvals.df.50.2$p.value.resp <- NA
+# pvals.df.50.2$p.value.photo <- NA
+# # resp
+# for(i in 1:dim(pvals.df.50.2)[1]){
+#   hold <-ttest.df.50.resp[ttest.df.50.resp$group==pvals.df.50.2$group[i],] %>% 
+#     pull(Resp.del)
+#   hold.ttest <- t.test(hold)
+#   tidy.hold <- tidy(hold.ttest)
+#   pvals.df.50.2$p.value.resp[i] <- round(tidy.hold$p.value,3) }
+# # photo
+# for(i in 1:dim(pvals.df.50.2)[1]){
+#   hold <-ttest.df.50.resp[ttest.df.50.resp$group==pvals.df.50.2$group[i],] %>% 
+#     pull(Photo.del)
+#   hold.ttest <- t.test(hold)
+#   tidy.hold <- tidy(hold.ttest)
+#   pvals.df.50.2$p.value.photo[i] <- round(tidy.hold$p.value,3) }
+# 
+# ## Graz
+# ttest.df.50.graz <- graz50_last3 %>% 
+#   filter(Strain != 1391) %>% 
+#   select( ID, Strain, Ev, Acc, Rep, Week, Grazing.del) %>% 
+#   filter(Ev==Acc) %>% 
+#   filter(Ev != 24) %>% 
+#   filter(!is.na(Grazing.del))
+# ttest.df.50.graz$group <- paste(ttest.df.50.graz$Strain,ttest.df.50.graz$Ev,ttest.df.50.graz$Acc,sep='.')
+# pvals.df.50.2$p.value.graz <- NA
+# 
+# # graz
+# for(i in 1:dim(pvals.df.50.2)[1]){
+#   hold <-ttest.df.50.graz[ttest.df.50.graz$group==pvals.df.50.2$group[i],] %>% 
+#     pull(Grazing.del)
+#   hold.ttest <- t.test(hold)
+#   tidy.hold <- tidy(hold.ttest)
+#   pvals.df.50.2$p.value.graz[i] <- round(tidy.hold$p.value,3) }
+# 
+# ## CUE
+# 
+# CUE50_last3_del<- cue.gr.avg.50 
+# CUE50_last3_del$Treat.Acc <- paste(CUE50_last3_del$Strain,CUE50_last3_del$Acc,CUE50_last3_del$Rep,sep='.')
+# 
+# CUE50_hold<-cue.gr.avg.50 %>% 
+#   filter(Ev == 24)
+# CUE50_hold$Treat.Acc <- paste(CUE50_hold$Strain,CUE50_hold$Acc,CUE50_hold$Rep,sep='.')
+# 
+# CUE50_last3_del$cue.ref <- CUE50_hold$CUE[match(CUE50_last3_del$Treat.Acc,CUE50_hold[CUE50_hold$Ev==24,]$Treat.Acc)] 
+# 
+# CUE50_last3_del <- CUE50_last3_del[!is.na(CUE50_last3_del$cue.ref),]
+# 
+# # Match evolved & ancestral reference points
+# CUE50_last3_del$cue.propdel <- (CUE50_last3_del$CUE-CUE50_last3_del$cue.ref)/abs(CUE50_last3_del$cue.ref) # Compute rel. difference
+# CUE50_last3_del$cue.del <- (CUE50_last3_del$CUE-CUE50_last3_del$cue.ref) # Compute abs difference
+# 
+# ## CUE
+# ttest.df.50.cue <- CUE50_last3_del %>%
+#   select( ID, Strain, Ev, Acc, Rep, cue.del) %>%
+#   filter(Ev==Acc) %>%
+#   filter(Ev != 24) %>%
+#   filter(!is.na(cue.del))
+# ttest.df.50.cue$group <- paste(ttest.df.50.cue$Strain,ttest.df.50.cue$Ev,ttest.df.50.cue$Acc,sep='.')
+# pvals.df.50.2$p.value.cue <- NA
+# 
+# # cue
+# for(i in 1:dim(pvals.df.50.2)[1]){
+#   hold <-ttest.df.50.cue[ttest.df.50.cue$group==pvals.df.50.2$group[i],] %>%
+#     pull(cue.del)
+#   hold.ttest <- t.test(hold)
+#   tidy.hold <- tidy(hold.ttest)
+#   pvals.df.50.2$p.value.cue[i] <- round(tidy.hold$p.value,3) }
+# 
+# 
+# 
+# ## data frame of significance
+# 
+# pvals.df.50.2.sig <- pvals.df.50.2
+# pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] > .05] <- NA
+# pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] <=.001] <- "high"
+# pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] <=.01] <-"mid"
+# pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] <=.05] <-"low"
+# 
+# pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] == "high"] <- "***"
+# pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] =="mid"] <- "**"
+# pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] =="low"] <-  "*"
 
 ```
 
-Plots 2951 at 100
-
-```{r}
-settheme <- theme_set(theme_base(base_size = 10)) +
-  theme_update(plot.background=element_blank())
-
-theme_set(settheme)
-
-
-#Growth rate of 2951 at 100 by acclimation temperature with experimental lineages in blue and red and control lineages in gray
-strainchoice <- 2951
-lightchoice <- 100
-
-points.sig <- pvals.df.100.2.sig %>% 
-  filter(Strain == strainchoice) 
-
-b0 <- ggplot(subset(CUE.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=CUE, color=as.factor(Ev))) + 
-  geom_errorbar(aes(ymin=CUE-se, ymax=CUE+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(CUE.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=CUE-se, ymax=CUE+se, width = .2), color = "gray48") +
-  geom_line(data = subset(CUE.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(CUE.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .92, label = points.sig[points.sig$Ev==18,]$p.value.cue) +
-  annotate("text", x= 30,  y = .85, label = points.sig[points.sig$Ev==30,]$p.value.cue)
-
-b1<-ggplot(subset(Growth.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Growth.Rate, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se), width=.2) +
-    scale_color_manual(values=newcols) +
-  scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
- theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Growth.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Growth.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Growth.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .6, label = points.sig[points.sig$Ev==18,]$p.value.growth) +
-  annotate("text", x= 30,  y = .6, label = points.sig[points.sig$Ev==30,]$p.value.growth)
- 
-
-# Red f 
-b2<-ggplot(subset(redf.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=redf, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=redf-se, ymax=redf+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(redf.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=redf-se, ymax=redf+se, width = .2), color = "gray48") +
-  geom_line(data = subset(redf.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(redf.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = 14, label = points.sig[points.sig$Ev==18,]$p.value.redf) +
-  annotate("text", x= 30,  y = 11, label = points.sig[points.sig$Ev==30,]$p.value.redf)
-
-
-# C
-b3<-ggplot(subset(C.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=C, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=C-se, ymax=C+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(C.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=C-se, ymax=C+se, width = .2), color = "gray48") +
-  geom_line(data = subset(C.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(C.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = 13, label = points.sig[points.sig$Ev==18,]$p.value.c) +
-  annotate("text", x= 30,  y = 13, label = points.sig[points.sig$Ev==30,]$p.value.c)
-
-# Resp
-b4 <- ggplot(subset(Resp.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Resp, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=Resp-se, ymax=Resp+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
- theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),      
-      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Resp.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=Resp-se, ymax=Resp+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Resp.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Resp.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = 1.25, label = points.sig[points.sig$Ev==18,]$p.value.resp) +
-  annotate("text", x= 30,  y = 1.25, label = points.sig[points.sig$Ev==30,]$p.value.resp)
-
-# Photo
-b5 <- ggplot(subset(Photo.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Photo, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=Photo-se, ymax=Photo+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Photo.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=Photo-se, ymax=Photo+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Photo.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Photo.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .4, label = points.sig[points.sig$Ev==18,]$p.value.photo) +
-  annotate("text", x= 30,  y = .4, label = points.sig[points.sig$Ev==30,]$p.value.photo)
-
-# Graz
-b6 <- ggplot(subset(Graz.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=graz, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=graz-se, ymax=graz+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
- theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Graz.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=graz-se, ymax=graz+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Graz.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Graz.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .2, label = points.sig[points.sig$Ev==18,]$p.value.graz) +
-  annotate("text", x= 30,  y = .2, label = points.sig[points.sig$Ev==30,]$p.value.graz)
-
-# fvfm
-b7<-ggplot(subset(fvfm.summ.100, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=fvfm, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=fvfm-se, ymax=fvfm+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
- labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(fvfm.summ.100, Ev==24 & Strain == strainchoice),aes(ymin=fvfm-se, ymax=fvfm+se, width = .2), color = "gray48") +
-  geom_line(data = subset(fvfm.summ.100, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(fvfm.summ.100, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .5, label = points.sig[points.sig$Ev==18,]$p.value.fvfm) +
-  annotate("text", x= 30,  y = .5, label = points.sig[points.sig$Ev==30,]$p.value.fvfm)
-
-# N
-b8<-ggplot(subset(N.summ.100.2, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=N, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=N-se, ymax=N+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice),aes(ymin=N-se, ymax=N+se, width = .2), color = "gray48") +
-  geom_line(data = subset(N.summ.100.2, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice), color = "gray48", aes())
-
-```
-
-Plots 1393 at 50 
-
-```{r}
-theme_set(theme_base(base_size = 10)) 
-# theme_update(plot.background=element_blank(),
-#              axis.title.y=element_blank(),
-#              axis.text.y=element_blank())
-
-
-
-#Growth rate of 1393 at 50 by acclimation temperature with experimental lineages in blue and red and control lineages in gray
-strainchoice <- 1393
-lightchoice <- 50
-
-points.sig <- pvals.df.50.2.sig %>% 
-  filter(Strain == strainchoice) 
-
-c0 <- ggplot(subset(CUE.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=CUE, color=as.factor(Ev))) + 
-  geom_errorbar(aes(ymin=CUE-se, ymax=CUE+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = c(.8,.9))+
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
- labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(CUE.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=CUE-se, ymax=CUE+se, width = .2), color = "gray48") +
-  geom_line(data = subset(CUE.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(CUE.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .88, label = points.sig[points.sig$Ev==18,]$p.value.cue) +
-  annotate("text", x= 30,  y = .8, label = points.sig[points.sig$Ev==30,]$p.value.cue)
-
-c1<-ggplot(subset(Growth.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Growth.Rate, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se), width=.2) +
-    scale_color_manual(values=newcols) +
-  scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
- labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Growth.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Growth.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Growth.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .3, label = points.sig[points.sig$Ev==18,]$p.value.growth) +
-  annotate("text", x= 30,  y = .3, label = points.sig[points.sig$Ev==30,]$p.value.growth)
- 
-
-# Red f 
-c2<-ggplot(subset(redf.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=redf, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=redf-se, ymax=redf+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
- theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),      
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
- labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(redf.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=redf-se, ymax=redf+se, width = .2), color = "gray48") +
-  geom_line(data = subset(redf.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(redf.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = 15, label = points.sig[points.sig$Ev==18,]$p.value.redf) +
-  annotate("text", x= 30,  y = 15, label = points.sig[points.sig$Ev==30,]$p.value.redf)
-
-
-# C
-c3<-ggplot(subset(C.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=C, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=C-se, ymax=C+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
- theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),      
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(C.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=C-se, ymax=C+se, width = .2), color = "gray48") +
-  geom_line(data = subset(C.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(C.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = 22, label = points.sig[points.sig$Ev==18,]$p.value.c) +
-  annotate("text", x= 30,  y = 22, label = points.sig[points.sig$Ev==30,]$p.value.c)
-
-# Resp
-c4 <- ggplot(subset(Resp.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Resp, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=Resp-se, ymax=Resp+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-      axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")  ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Resp.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=Resp-se, ymax=Resp+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Resp.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Resp.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = 2, label = points.sig[points.sig$Ev==18,]$p.value.resp) +
-  annotate("text", x= 30,  y = 2, label = points.sig[points.sig$Ev==30,]$p.value.resp)
-
-# Photo
-c5 <- ggplot(subset(Photo.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Photo, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=Photo-se, ymax=Photo+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Photo.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=Photo-se, ymax=Photo+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Photo.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Photo.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .9, label = points.sig[points.sig$Ev==18,]$p.value.photo) +
-  annotate("text", x= 30,  y = .9, label = points.sig[points.sig$Ev==30,]$p.value.photo)
-
-# Graz
-c6 <- ggplot(subset(Graz.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=graz, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=graz-se, ymax=graz+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
- theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),      
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Graz.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=graz-se, ymax=graz+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Graz.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Graz.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .3, label = points.sig[points.sig$Ev==18,]$p.value.graz) +
-  annotate("text", x= 30,  y = .3, label = points.sig[points.sig$Ev==30,]$p.value.graz)
-
-# fvfm
-c7<-ggplot(subset(fvfm.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=fvfm, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=fvfm-se, ymax=fvfm+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(fvfm.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=fvfm-se, ymax=fvfm+se, width = .2), color = "gray48") +
-  geom_line(data = subset(fvfm.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(fvfm.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .48, label = points.sig[points.sig$Ev==18,]$p.value.fvfm) +
-  annotate("text", x= 30,  y = .48, label = points.sig[points.sig$Ev==30,]$p.value.fvfm)
-
-# N
-c8<-ggplot(subset(N.summ.100.2, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=N, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=N-se, ymax=N+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),      
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice),aes(ymin=N-se, ymax=N+se, width = .2), color = "gray48") +
-  geom_line(data = subset(N.summ.100.2, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice), color = "gray48", aes())
-
-
-```
-
-Plots 2951 at 50
-
-```{r}
-
-#Growth rate of 2951 at 50 by acclimation temperature with experimental lineages in blue and red and control lineages in gray
-strainchoice <- 2951
-lightchoice <- 50
-
-points.sig <- pvals.df.50.2.sig %>% 
-  filter(Strain == strainchoice) 
-
-d0 <- ggplot(subset(CUE.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=CUE, color=as.factor(Ev))) + 
-  geom_errorbar(aes(ymin=CUE-se, ymax=CUE+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),      
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(CUE.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=CUE-se, ymax=CUE+se, width = .2), color = "gray48") +
-  geom_line(data = subset(CUE.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(CUE.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .8, label = points.sig[points.sig$Ev==18,]$p.value.cue) +
-  annotate("text", x= 30,  y = .8, label = points.sig[points.sig$Ev==30,]$p.value.cue)
-
-d1<-ggplot(subset(Growth.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Growth.Rate, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se), width=.2) +
-    scale_color_manual(values=newcols) +
-  scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
- theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm") ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
- labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Growth.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=Growth.Rate-se, ymax=Growth.Rate+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Growth.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Growth.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .4, label = points.sig[points.sig$Ev==18,]$p.value.growth) +
-  annotate("text", x= 30,  y = .3, label = points.sig[points.sig$Ev==30,]$p.value.growth)
- 
-
-# Red f 
-d2<-ggplot(subset(redf.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=redf, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=redf-se, ymax=redf+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
- labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(redf.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=redf-se, ymax=redf+se, width = .2), color = "gray48") +
-  geom_line(data = subset(redf.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(redf.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = 10.5, label = points.sig[points.sig$Ev==18,]$p.value.redf) +
-  annotate("text", x= 30,  y = 10.5, label = points.sig[points.sig$Ev==30,]$p.value.redf)
-
-
-# C
-d3<-ggplot(subset(C.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=C, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=C-se, ymax=C+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       plot.margin = margin(.1, .1, .1, .5, "cm")
-      ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(C.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=C-se, ymax=C+se, width = .2), color = "gray48") +
-  geom_line(data = subset(C.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(C.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = 15, label = points.sig[points.sig$Ev==18,]$p.value.c) +
-  annotate("text", x= 30,  y = 15, label = points.sig[points.sig$Ev==30,]$p.value.c)
-
-# Resp
-d4 <- ggplot(subset(Resp.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Resp, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=Resp-se, ymax=Resp+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-   theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Resp.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=Resp-se, ymax=Resp+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Resp.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Resp.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = 1.5, label = points.sig[points.sig$Ev==18,]$p.value.resp) +
-  annotate("text", x= 30,  y = 1.5, label = points.sig[points.sig$Ev==30,]$p.value.resp)
-
-# Photo
-d5 <- ggplot(subset(Photo.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=Photo, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=Photo-se, ymax=Photo+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Photo.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=Photo-se, ymax=Photo+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Photo.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Photo.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .8, label = points.sig[points.sig$Ev==18,]$p.value.photo) +
-  annotate("text", x= 30,  y = .4, label = points.sig[points.sig$Ev==30,]$p.value.photo)
-
-# Graz
-d6 <- ggplot(subset(Graz.summ.50, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=graz, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=graz-se, ymax=graz+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-  theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(Graz.summ.50, Ev==24 & Strain == strainchoice),aes(ymin=graz-se, ymax=graz+se, width = .2), color = "gray48") +
-  geom_line(data = subset(Graz.summ.50, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(Graz.summ.50, Ev==24 & Strain == strainchoice), color = "gray48", aes())+
-  annotate("text", x= 18,  y = .25, label = points.sig[points.sig$Ev==18,]$p.value.graz) +
-  annotate("text", x= 30,  y = .3, label = points.sig[points.sig$Ev==30,]$p.value.graz)
-
-
-# fvfm
-d7<-ggplot(subset(fvfm.summ.50, Ev==Acc & Strain == strainchoice), 
-           aes(x=Acc, y=fvfm, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=fvfm-se, ymax=fvfm+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
- theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       
-      plot.margin = margin(.1, .1, .1, .5, "cm")) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-  labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(fvfm.summ.50, Ev==24 & Strain == strainchoice),
-                aes(ymin=fvfm-se, ymax=fvfm+se, width = .2), color = "gray48") +
-  geom_line(data = subset(fvfm.summ.50, Ev==24 &Strain == strainchoice), 
-            color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(fvfm.summ.50, Ev==24 & Strain == strainchoice), 
-             color = "gray48", aes())+
-  annotate("text", x= 18,  y = .55, label = points.sig[points.sig$Ev==18,]$p.value.fvfm) +
-  annotate("text", x= 30,  y = .53, label = points.sig[points.sig$Ev==30,]$p.value.fvfm)
-
-# N
-d8<-ggplot(subset(N.summ.100.2, Ev==Acc & Strain == strainchoice), aes(x=Acc, y=N, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=N-se, ymax=N+se), width=.2) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-theme(legend.position = "none",
-      axis.title.x=element_blank(),
-      axis.text.x=element_blank(),       
-      axis.text.y=element_text(size = labelcex),
-       axis.ticks.length = unit(.10, "cm"),       plot.margin = margin(.1, .1, .1, .5, "cm")
-      ) +
-    geom_line(color = "black") +
-    geom_point(size=3, aes()) +
-labs( y = NULL, x=NULL) +
-  geom_errorbar(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice),aes(ymin=N-se, ymax=N+se, width = .2), color = "gray48") +
-  geom_line(data = subset(N.summ.100.2, Ev==24 &Strain == strainchoice), color = "gray48", linetype = "dashed") +
-  geom_point(data = subset(N.summ.100.2, Ev==24 & Strain == strainchoice), color = "gray48", aes())
-
-
-```
-
-Arrange all plots
-
-```{r, fig.height=4.5, fig.width=4}
-
-theme_set(theme_base(base_size = 10)) 
-theme_update(plot.background=element_blank())
- 
-# 1 growth rate
-# 3 c cell
-# 0 cue
-# 4 resp
-# 5 photo
-# 6 graz
-# 2 chla
-# 7 fvfm
-#8 N
-
-
-labelcex <- 10
-
-ggarrange(a1, c1, b1,  d1,
-          a3, c3, b3, d3,
-          a5, c5, b5, d5,
-          a6,c6,b6,d6,
-          a4, c4, b4,  d4,
-          a0,c0,b0,d0,
-          labels = c("A", "B", "C","D",
-                     "E","F","G","H",
-                     "I","J","K","L",
-                     "M","N","O","P",
-                     "Q","R","S","T",
-                     "U","V","W","X"),
-          font.label = list(size = 12, color = "black", family = NULL),
-          label.x = 0,
-          label.y = 1,
-          ncol = 4, nrow = 6, align="hv"  )
-
-# supplementary 1
-ggarrange(a2, c2, b2,d2,
-  a7, c7, b7,d7,
-   labels = c("A", "B", "C","D",
-                     "E","F","G","H"),
-   font.label = list(size = 12, color = "black", family = NULL),
-          label.x = 0,
-          label.y = 1,
-          ncol = 4, nrow = 6, align="hv" )
-
-```
-
-### 1393 bar graphs of deltas
 
 ```{r, fig.height=2, fig.width=4}
 #Growth, C/cell, Chla, ETR, Cfix, Graz, Resp
