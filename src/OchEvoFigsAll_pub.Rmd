@@ -381,7 +381,6 @@ Respiration and photosynthesis from optode in pgC/pgC per day == gC per gC per d
 # Convert metabolic rates from O2 per mL per s to pgC per cell per day (Barton et al 2020) using CN data from Week 141
 # resp/photo (pgC/och*day) = resp/photo(pgO2/cell*day) * 0.000001 (ug/pg) * 0.031251171918947 (umolsO2/ugO2) * M *32 *(12/44)
 
-
 cn_hold100 <- dat100 %>% 
   filter(Week == 141)
 resp_hold100 <- dat100 %>% 
@@ -389,15 +388,21 @@ resp_hold100 <- dat100 %>%
 resp_hold100$ID <- paste(resp_hold100$Strain,resp_hold100$Ev,resp_hold100$Acc,resp_hold100$Rep,resp_hold100$Week,sep='.')
 resp_hold100$C141 <- cn_hold100$pgC.cell[match(resp_hold100$Lineage,cn_hold100$Lineage)]
 resp_hold100$N141 <- cn_hold100$pgN.cell[match(resp_hold100$Lineage,cn_hold100$Lineage)]
+# calculate C and N in moles
 resp_hold100$C_moles <- resp_hold100$C141 * 1e-12 * 0.083259093974539
 resp_hold100$N_moles <- resp_hold100$N141 * 1e-12 * 0.071394404106606
 resp_hold100$C_N_moles <- resp_hold100$C_moles/resp_hold100$N_moles
+# calculate M, species-specific assimilation quotient from Falkowski et al 1985 as n/n+2 where n is the c:n ratio
 resp_hold100$M <- resp_hold100$C_N_moles/(resp_hold100$C_N_moles+2)
+# convert to units of pgC per cell per day with equation from Barton et al 2020.
 resp_hold100$respiration <- resp_hold100$pgO2.cell.day *0.031251171918947 * 0.000001 *resp_hold100$M  * 32 * (12/44) * 1000000
+# convert to pgC per pgC per day
 resp_hold100$respiration.perC <- resp_hold100$respiration / resp_hold100$C141
+# repeat with photosuynthesis
 resp_hold100$photosynth <- resp_hold100$pgO2.cell.phot.day *0.031251171918947 * 0.000001 *resp_hold100$M  * 32 * (12/44) * 1000000
 resp_hold100$photosynth.perC <- resp_hold100$photosynth / resp_hold100$C141
 
+# repeat with 50uE
 cn_hold50 <- dat50 %>% 
   filter(Week == 141)
 resp_hold50 <- dat50 %>% 
@@ -466,16 +471,19 @@ resp.50 <- resp.50[!is.na(resp.50$Resp),]
 Grazing in pgC per pgC per day == gC per gC per day
 
 ```{r, echo = FALSE, warning = FALSE}
-# dataframe for grazing, convert to pgC per pgC per day using CN data from week141
+# dataframes for grazing, convert to pgC per pgC per day using CN data from week141
 
+# 100uE convert from pgC per cell to pgC per pgC using CN data from week 141
 cn_hold100 <- dat100 %>% 
   filter(Week == 141)
 graz_hold100 <- dat100 %>% 
   filter( !is.na (graz.day))
 graz_hold100$ID <- paste(graz_hold100$Strain,graz_hold100$Ev,graz_hold100$Acc,graz_hold100$Rep,graz_hold100$Week,sep='.')
 graz_hold100$C141 <- cn_hold100$pgC.cell[match(graz_hold100$Lineage,cn_hold100$Lineage)]
+# convert from pgC per cell to pgC per pgC
 graz_hold100$graz.C.day <- graz_hold100$graz.day / graz_hold100$C141
 
+#repeat with 50uE
 cn_hold50 <- dat50 %>% 
   filter(Week == 141)
 graz_hold50 <- dat50 %>% 
@@ -484,6 +492,7 @@ graz_hold50$ID <- paste(graz_hold50$Strain,graz_hold50$Ev,graz_hold50$Acc,graz_h
 graz_hold50$C141 <- cn_hold50$pgC.cell[match(graz_hold50$Lineage,cn_hold50$Lineage)]
 graz_hold50$graz.C.day <- graz_hold50$graz.day / graz_hold50$C141
 
+# grazing data frame 
 graz_hold100$Treat.Acc <- paste(graz_hold100$Strain,graz_hold100$Acc,graz_hold100$Rep,graz_hold100$Week,sep='.')
 graz.100 <- as.data.frame(unique(graz_hold100$ID))
 names(graz.100) <- 'ID'
@@ -503,7 +512,7 @@ graz.100 <- graz.100[!is.na(graz.100$graz),]
 graz.100$Grazing.propdel <- (graz.100$graz-graz.100$graz.ref)/abs(graz.100$graz.ref) # Compute rel. difference
 graz.100$Grazing.del <- (graz.100$graz-graz.100$graz.ref) # Compute abs difference
 
-
+# repeat for 50uE
 graz_hold50$Treat.Acc <- paste(graz_hold50$Strain,graz_hold50$Acc,graz_hold50$Rep,graz_hold50$Week,sep='.')
 graz.50 <- as.data.frame(unique(graz_hold50$ID))
 names(graz.50) <- 'ID'
@@ -530,50 +539,46 @@ graz.50$Grazing.del <- (graz.50$graz-graz.50$graz.ref) # Compute abs difference
 Carbon use efficiency
 
 ```{r}
-# calculate carbon use efficiency end of experiment data points for growth rate and respiration from 
+# calculate carbon use efficiency end of experiment data points for growth rate and respiration 
+# cue = net carbon gained/gross carbon gained = growth / (growth + respiration)
 
+# 100uE CUE
 CUE100_last3 <- growths100 %>% 
   filter(Strain != 1391) %>% 
   filter(Week %in% c(125,140,154))
-
 CUE100_last3$pgC.cell <- cn_hold100$pgC.cell[match(CUE100_last3$Lineage,cn_hold100$Lineage)]
 CUE100_last3$gr.cell <- CUE100_last3$pgC.cell * CUE100_last3$Growth.Rate
-
-
+# average growth and and respiration to calculate average cue
 cue.gr.avg.100 <- summarySE(data = CUE100_last3, measurevar = 'gr.cell', groupvars = c('Strain', 'Ev', 'Acc', 'Rep'))
 cue.gr.avg.100$ID <- paste(cue.gr.avg.100$Strain, cue.gr.avg.100$Ev, cue.gr.avg.100$Acc, cue.gr.avg.100$Rep, sep = ".")
 cue.resp.avg.100 <- summarySE(data = resp.100, measurevar = 'Resp', groupvars = c('Strain', 'Ev', 'Acc', 'Rep'))
 cue.resp.avg.100$ID <- paste(cue.resp.avg.100$Strain, cue.resp.avg.100$Ev, cue.resp.avg.100$Acc, cue.resp.avg.100$Rep, sep = ".")
 cue.gr.avg.100$Resp.avg <- cue.resp.avg.100$Resp[match(cue.gr.avg.100$ID,cue.resp.avg.100$ID)]
- 
 cue.gr.avg.100$CUE <- cue.gr.avg.100$gr.cell / (cue.gr.avg.100$gr.cell + cue.gr.avg.100$Resp.avg)
 
-#50 ue
-
+# repeat for 50 ue
 CUE50_last3 <- growths50 %>% 
   filter(Strain != 1391) %>% 
   filter(Week %in% c(125,140,154))
-
 CUE50_last3$pgC.cell <- cn_hold50$pgC.cell[match(CUE50_last3$Lineage,cn_hold50$Lineage)]
 CUE50_last3$gr.cell <- CUE50_last3$pgC.cell * CUE50_last3$Growth.Rate
-
 cue.gr.avg.50 <- summarySE(data = CUE50_last3, measurevar = 'gr.cell', groupvars = c('Strain', 'Ev', 'Acc', 'Rep'))
 cue.gr.avg.50$ID <- paste(cue.gr.avg.50$Strain, cue.gr.avg.50$Ev, cue.gr.avg.50$Acc, cue.gr.avg.50$Rep, sep = ".")
 cue.resp.avg.50 <- summarySE(data = resp.50, measurevar = 'Resp', groupvars = c('Strain', 'Ev', 'Acc', 'Rep'))
 cue.resp.avg.50$ID <- paste(cue.resp.avg.50$Strain, cue.resp.avg.50$Ev, cue.resp.avg.50$Acc, cue.resp.avg.50$Rep, sep = ".")
 cue.gr.avg.50$Resp.avg <- cue.resp.avg.50$Resp[match(cue.gr.avg.50$ID,cue.resp.avg.50$ID)]
- 
 cue.gr.avg.50$CUE <- cue.gr.avg.50$gr.cell / (cue.gr.avg.50$gr.cell + cue.gr.avg.50$Resp.avg)
 
 ```
 
-### Growth TIMESERIES
 
+### Growth TIMESERIES
 
 T-testing
 
 ```{r}
-# 100
+# ttest for growth rate delta difference from 0
+
 # TTEST FOR LOOP
 ttest.df.100 <- growths100 %>% 
   filter(Strain != 1391) %>% 
@@ -581,7 +586,7 @@ ttest.df.100 <- growths100 %>%
   filter(Ev==Acc) %>% 
   filter(Ev != 24)
 ttest.df.100$group <- paste(ttest.df.100$Strain,ttest.df.100$Ev,ttest.df.100$Acc,ttest.df.100$Week,sep='.')
-
+#data frame to store results
 pvals.df.100 <- as.data.frame(unique(ttest.df.100$group))
 names(pvals.df.100) <- 'group'
 pvals.df.100$Strain <- ttest.df.100$Strain[match(pvals.df.100$group,ttest.df.100$group)]
@@ -607,7 +612,7 @@ pvals.df.100 <- pvals.df.100 %>%
   ))
 
 
-# 50
+# repeat for 50 uE
 # TTEST FOR LOOP
 ttest.df.50 <- growths50 %>% 
   filter(Strain != 1391) %>% 
@@ -615,7 +620,7 @@ ttest.df.50 <- growths50 %>%
   filter(Ev==Acc) %>% 
   filter(Ev != 24)
 ttest.df.50$group <- paste(ttest.df.50$Strain,ttest.df.50$Ev,ttest.df.50$Acc,ttest.df.50$Week,sep='.')
-
+# data frame to store results
 pvals.df.50 <- as.data.frame(unique(ttest.df.50$group))
 names(pvals.df.50) <- 'group'
 pvals.df.50$Strain <- ttest.df.50$Strain[match(pvals.df.50$group,ttest.df.50$group)]
@@ -641,7 +646,7 @@ pvals.df.50 <- pvals.df.50 %>%
   ))
 ```
 
-Timeseries - alpha pvals
+Timeseries plot - alpha pvals
 
 ```{r,fig.height=8}
 
@@ -803,20 +808,21 @@ legend(1000,0.8, legend = c(lp1,lp2,lp3,lp4), pch= c(21,21,21,21),col = "black",
 Summary stats for all parameters for last 2-3 measurements timepoints
 
 ```{r}
+# Calculate summary stats at end of experiment 
 
+# growth, redf, fvfm 
+# 100 uE
 growthsweekselection <- c(125,140,154)
-
 growths100_last3<- growths100 %>% 
   filter(Strain != 1391) %>% 
   filter(Week %in% growthsweekselection)
-
 Growth.summ.100 <- summarySE(data=growths100_last3,measurevar='Growth.Rate',groupvars=c('Strain','Ev','Acc'))
 Del.Growth.summ.100 <- summarySE(data=growths100_last3,measurevar='Growth.del',groupvars=c('Strain','Ev','Acc'))
 redf.summ.100 <- summarySE(data=growths100_last3,measurevar='redf',groupvars=c('Strain','Ev','Acc'))
 Del.redf.summ.100 <- summarySE(data=growths100_last3,measurevar='redf.del',groupvars=c('Strain','Ev','Acc'))
 fvfm.summ.100 <- summarySE(data=growths100_last3,measurevar='fvfm',groupvars=c('Strain','Ev','Acc'))
 Del.fvfm.summ.100 <- summarySE(data=growths100_last3,measurevar='fvfm.del',groupvars=c('Strain','Ev','Acc'))
-
+# 50uE
 growths50_last3<-growths50 %>% 
   filter(Strain != 1391) %>% 
   filter(Week %in% growthsweekselection)
@@ -825,44 +831,43 @@ redf.summ.50 <- summarySE(data=growths50_last3,measurevar='redf',groupvars=c('St
 fvfm.summ.50 <- summarySE(data=growths50_last3,measurevar='fvfm',groupvars=c('Strain','Ev','Acc'))
 Del.fvfm.summ.50 <- summarySE(data=growths50_last3,measurevar='fvfm.del',groupvars=c('Strain','Ev','Acc'))
 
+# cn 
 cn.100_last3<-cn.100 %>% 
   filter(Strain != 1391) %>% 
   filter(Week %in% c(104,141))
 C.summ.100 <- summarySE(data=cn.100_last3,measurevar='C',groupvars=c('Strain','Ev','Acc'))
-
 cn.50_last3<-cn.50 %>% 
   filter(Strain != 1391) %>% 
   filter(Week %in% c(104,141))
 C.summ.50 <- summarySE(data=cn.50_last3,measurevar='C',groupvars=c('Strain','Ev','Acc'))
-
 N.summ.100 <- summarySE(data=cn.100_last3,measurevar='N',groupvars=c('Strain','Ev','Acc'))
 N.summ.50 <- summarySE(data=cn.50_last3,measurevar='N',groupvars=c('Strain','Ev','Acc'))
 N.summ.100.2<- N.summ.100[,c(1,2,3,5,6,7,8)]
 N.summ.50.2<- N.summ.50[,c(1,2,3,5,6,7,8)]
 
+# respiration and photosynthesis
 resp.100_last3<-resp.100 %>% 
   filter(Strain != 1391) %>% 
   filter(Week %in% c(90,114,138))
 Resp.summ.100 <- summarySE(data=resp.100_last3,measurevar='Resp',groupvars=c('Strain','Ev','Acc'))
 Photo.summ.100 <- summarySE(data=resp.100_last3,measurevar='Photo',groupvars=c('Strain','Ev','Acc'))
-
 resp.50_last3<-resp.50 %>% 
   filter(Strain != 1391) %>% 
   filter(Week %in% c(90,114,138))
 Resp.summ.50 <- summarySE(data=resp.50_last3,measurevar='Resp',groupvars=c('Strain','Ev','Acc'))
 Photo.summ.50 <- summarySE(data=resp.50_last3,measurevar='Photo',groupvars=c('Strain','Ev','Acc'))
 
+# grazing
 graz100_last3<-graz.100 %>% 
   filter(Strain != 1391) %>% 
   filter(Week %in% c(118,130,142))
 Graz.summ.100 <- summarySE(data=graz100_last3,measurevar='graz',groupvars=c('Strain','Ev','Acc'))
-
 graz50_last3<-graz.50 %>% 
   filter(Strain != 1391) %>% 
   filter(Week %in% c(118,130,142))
 Graz.summ.50 <- summarySE(data=graz50_last3,measurevar='graz',groupvars=c('Strain','Ev','Acc'))
 
-
+# CUE
 CUE.summ.100<- summarySE(data=cue.gr.avg.100,measurevar='CUE',groupvars=c('Strain','Ev','Acc'))
 CUE.summ.50<- summarySE(data=cue.gr.avg.50,measurevar='CUE',groupvars=c('Strain','Ev','Acc'))
 
@@ -871,7 +876,7 @@ CUE.summ.50<- summarySE(data=cue.gr.avg.50,measurevar='CUE',groupvars=c('Strain'
 T-testing for Fig 3
 
 ```{r}
-# test the difference between 
+# test the difference between evolved and acclimates with two sample ttests
 # 100
 ttest.df.100.3 <- growths100_last3 %>% 
   filter(Strain != 1391) %>% 
@@ -879,6 +884,7 @@ ttest.df.100.3 <- growths100_last3 %>%
   filter(Ev==Acc) %>% 
   filter(Ev != 24)
 ttest.df.100.3$group <- paste(ttest.df.100.3$Strain,ttest.df.100.3$Ev,ttest.df.100.3$Acc,sep='.')
+# set up df to save results
 pvals.df.100.3 <- as.data.frame(unique(ttest.df.100.3$group))
 names(pvals.df.100.3) <- 'group'
 pvals.df.100.3$Strain <- ttest.df.100.3$Strain[match(pvals.df.100.3$group,ttest.df.100.3$group)]
@@ -896,7 +902,6 @@ for(i in 1:dim(pvals.df.100.3)[1]){
   hold.ttest <- t.test(hold1,hold2)
   tidy.hold <- tidy(hold.ttest)
   pvals.df.100.3$p.value.growth[i] <- round(tidy.hold$p.value,3) }
-
 # REDF
 for(i in 1:dim(pvals.df.100.3)[1]){
   hold1 <-ttest.df.100.3[ttest.df.100.3$group==pvals.df.100.3$group[i],] %>% 
@@ -916,7 +921,7 @@ for(i in 1:dim(pvals.df.100.3)[1]){
   tidy.hold <- tidy(hold.ttest)
   pvals.df.100.3$p.value.fvfm[i] <- round(tidy.hold$p.value,3) }
 
-## CN
+## CN 
 ttest.df.100.cn <- cn.100_last3 %>% 
   filter(Strain != 1391) %>% 
   select( ID, Strain, Ev, Acc, Rep, Week, C, C.ref, N, N.ref) %>% 
@@ -924,7 +929,7 @@ ttest.df.100.cn <- cn.100_last3 %>%
   filter(Ev != 24)
 ttest.df.100.cn$group <- paste(ttest.df.100.cn$Strain,ttest.df.100.cn$Ev,ttest.df.100.cn$Acc,sep='.')
 pvals.df.100.3$p.value.c <- NA
-# C
+#C
 for(i in 1:dim(pvals.df.100.3)[1]){
   hold1 <-ttest.df.100.cn[ttest.df.100.cn$group==pvals.df.100.3$group[i],] %>% 
     pull(C)
@@ -934,7 +939,7 @@ for(i in 1:dim(pvals.df.100.3)[1]){
   tidy.hold <- tidy(hold.ttest)
   pvals.df.100.3$p.value.c[i] <- round(tidy.hold$p.value,3) }
 
-## Resp
+## Respirometry
 ttest.df.100.resp <- resp.100_last3 %>% 
   filter(Strain != 1391) %>% 
   select( ID, Strain, Ev, Acc, Rep, Week, Resp, Resp.ref, Photo, Photo.ref) %>% 
@@ -963,7 +968,7 @@ for(i in 1:dim(pvals.df.100.3)[1]){
   tidy.hold <- tidy(hold.ttest)
   pvals.df.100.3$p.value.photo[i] <- round(tidy.hold$p.value,3) }
 
-## Graz
+## Grazing
 ttest.df.100.graz <- graz100_last3 %>% 
   filter(Strain != 1391) %>% 
   select( ID, Strain, Ev, Acc, Rep, Week, graz, graz.ref) %>% 
@@ -972,7 +977,6 @@ ttest.df.100.graz <- graz100_last3 %>%
   filter(!is.na(graz.ref))
 ttest.df.100.graz$group <- paste(ttest.df.100.graz$Strain,ttest.df.100.graz$Ev,ttest.df.100.graz$Acc,sep='.')
 pvals.df.100.3$p.value.graz <- NA
-
 # graz
 for(i in 1:dim(pvals.df.100.3)[1]){
   hold1 <-ttest.df.100.graz[ttest.df.100.graz$group==pvals.df.100.3$group[i],] %>% 
@@ -984,18 +988,13 @@ for(i in 1:dim(pvals.df.100.3)[1]){
   pvals.df.100.3$p.value.graz[i] <- round(tidy.hold$p.value,3) }
 
 ## CUE
-
 CUE100_last3_del<- cue.gr.avg.100 
 CUE100_last3_del$Treat.Acc <- paste(CUE100_last3_del$Strain,CUE100_last3_del$Acc,CUE100_last3_del$Rep,sep='.')
-
 CUE100_hold<-cue.gr.avg.100 %>% 
   filter(Ev == 24)
 CUE100_hold$Treat.Acc <- paste(CUE100_hold$Strain,CUE100_hold$Acc,CUE100_hold$Rep,sep='.')
-
 CUE100_last3_del$cue.ref <- CUE100_hold$CUE[match(CUE100_last3_del$Treat.Acc,CUE100_hold[CUE100_hold$Ev==24,]$Treat.Acc)] 
-
 CUE100_last3_del <- CUE100_last3_del[!is.na(CUE100_last3_del$cue.ref),]
-
 # Match evolved & ancestral reference points
 CUE100_last3_del$cue.propdel <- (CUE100_last3_del$CUE-CUE100_last3_del$cue.ref)/abs(CUE100_last3_del$cue.ref) # Compute rel. difference
 CUE100_last3_del$cue.del <- (CUE100_last3_del$CUE-CUE100_last3_del$cue.ref) # Compute abs difference
@@ -1008,7 +1007,6 @@ ttest.df.100.cue <- CUE100_last3_del %>%
   filter(!is.na(cue.ref))
 ttest.df.100.cue$group <- paste(ttest.df.100.cue$Strain,ttest.df.100.cue$Ev,ttest.df.100.cue$Acc,sep='.')
 pvals.df.100.3$p.value.cue <- NA
-
 # cue
 for(i in 1:dim(pvals.df.100.3)[1]){
   hold1 <-ttest.df.100.cue[ttest.df.100.cue$group==pvals.df.100.3$group[i],] %>%
@@ -1020,8 +1018,7 @@ for(i in 1:dim(pvals.df.100.3)[1]){
   pvals.df.100.3$p.value.cue[i] <- round(tidy.hold$p.value,3) }
 
 
-## data frame of significance
-
+## data frame of significance for plotting
 pvals.df.100.3.sig <- pvals.df.100.3
 pvals.df.100.3.sig[ ,5:12][pvals.df.100.3.sig [,5:12] > .05] <- NA
 pvals.df.100.3.sig[ ,5:12][pvals.df.100.3.sig [,5:12] <=.001] <- "high"
@@ -1032,13 +1029,14 @@ pvals.df.100.3.sig[ ,5:12][pvals.df.100.3.sig [,5:12] == "high"] <- "***"
 pvals.df.100.3.sig[ ,5:12][pvals.df.100.3.sig [,5:12] =="mid"] <- "**"
 pvals.df.100.3.sig[ ,5:12][pvals.df.100.3.sig [,5:12] =="low"] <-  "*"
  
-# 50
+# repeat all for 50
 ttest.df.50.3 <- growths50_last3 %>% 
   filter(Strain != 1391) %>% 
   select( ID, Strain, Ev, Acc, Rep, Week, Growth.Rate, Growth.Rate.ref,redf,redf.ref,fvfm,fvfm.ref) %>% 
   filter(Ev==Acc) %>% 
   filter(Ev != 24)
 ttest.df.50.3$group <- paste(ttest.df.50.3$Strain,ttest.df.50.3$Ev,ttest.df.50.3$Acc,sep='.')
+# df to save results
 pvals.df.50.3 <- as.data.frame(unique(ttest.df.50.3$group))
 names(pvals.df.50.3) <- 'group'
 pvals.df.50.3$Strain <- ttest.df.50.3$Strain[match(pvals.df.50.3$group,ttest.df.50.3$group)]
@@ -1056,7 +1054,6 @@ for(i in 1:dim(pvals.df.50.3)[1]){
   hold.ttest <- t.test(hold1,hold2)
   tidy.hold <- tidy(hold.ttest)
   pvals.df.50.3$p.value.growth[i] <- round(tidy.hold$p.value,3) }
-
 # REDF
 for(i in 1:dim(pvals.df.50.3)[1]){
   hold1 <-ttest.df.50.3[ttest.df.50.3$group==pvals.df.50.3$group[i],] %>% 
@@ -1094,7 +1091,7 @@ for(i in 1:dim(pvals.df.50.3)[1]){
   tidy.hold <- tidy(hold.ttest)
   pvals.df.50.3$p.value.c[i] <- round(tidy.hold$p.value,3) }
 
-## Resp
+## Respirometry
 ttest.df.50.resp <- resp.50_last3 %>% 
   filter(Strain != 1391) %>% 
   select( ID, Strain, Ev, Acc, Rep, Week, Resp, Resp.ref, Photo, Photo.ref) %>% 
@@ -1123,7 +1120,7 @@ for(i in 1:dim(pvals.df.50.3)[1]){
   tidy.hold <- tidy(hold.ttest)
   pvals.df.50.3$p.value.photo[i] <- round(tidy.hold$p.value,3) }
 
-## Graz
+## Grazing
 ttest.df.50.graz <- graz50_last3 %>% 
   filter(Strain != 1391) %>% 
   select( ID, Strain, Ev, Acc, Rep, Week, graz, graz.ref) %>% 
@@ -1132,7 +1129,6 @@ ttest.df.50.graz <- graz50_last3 %>%
   filter(!is.na(graz.ref))
 ttest.df.50.graz$group <- paste(ttest.df.50.graz$Strain,ttest.df.50.graz$Ev,ttest.df.50.graz$Acc,sep='.')
 pvals.df.50.3$p.value.graz <- NA
-
 # graz
 for(i in 1:dim(pvals.df.50.3)[1]){
   hold1 <-ttest.df.50.graz[ttest.df.50.graz$group==pvals.df.50.3$group[i],] %>% 
@@ -1143,23 +1139,17 @@ for(i in 1:dim(pvals.df.50.3)[1]){
   tidy.hold <- tidy(hold.ttest)
   pvals.df.50.3$p.value.graz[i] <- round(tidy.hold$p.value,3) }
 
-## CUE
-
+## CUE prep
 CUE50_last3_del<- cue.gr.avg.50 
 CUE50_last3_del$Treat.Acc <- paste(CUE50_last3_del$Strain,CUE50_last3_del$Acc,CUE50_last3_del$Rep,sep='.')
-
 CUE50_hold<-cue.gr.avg.50 %>% 
   filter(Ev == 24)
 CUE50_hold$Treat.Acc <- paste(CUE50_hold$Strain,CUE50_hold$Acc,CUE50_hold$Rep,sep='.')
-
 CUE50_last3_del$cue.ref <- CUE50_hold$CUE[match(CUE50_last3_del$Treat.Acc,CUE50_hold[CUE50_hold$Ev==24,]$Treat.Acc)] 
-
 CUE50_last3_del <- CUE50_last3_del[!is.na(CUE50_last3_del$cue.ref),]
-
 # Match evolved & ancestral reference points
 CUE50_last3_del$cue.propdel <- (CUE50_last3_del$CUE-CUE50_last3_del$cue.ref)/abs(CUE50_last3_del$cue.ref) # Compute rel. difference
 CUE50_last3_del$cue.del <- (CUE50_last3_del$CUE-CUE50_last3_del$cue.ref) # Compute abs difference
-
 ## CUE
 ttest.df.50.cue <- CUE50_last3_del %>%
   select( ID, Strain, Ev, Acc, Rep, CUE, cue.ref) %>%
@@ -1168,7 +1158,6 @@ ttest.df.50.cue <- CUE50_last3_del %>%
   filter(!is.na(cue.ref))
 ttest.df.50.cue$group <- paste(ttest.df.50.cue$Strain,ttest.df.50.cue$Ev,ttest.df.50.cue$Acc,sep='.')
 pvals.df.50.3$p.value.cue <- NA
-
 # cue
 for(i in 1:dim(pvals.df.50.3)[1]){
   hold1 <-ttest.df.50.cue[ttest.df.50.cue$group==pvals.df.50.3$group[i],] %>%
@@ -1181,7 +1170,6 @@ for(i in 1:dim(pvals.df.50.3)[1]){
 
 
 ## data frame of significance
-
 pvals.df.50.3.sig <- pvals.df.50.3
 pvals.df.50.3.sig[ ,5:12][pvals.df.50.3.sig [,5:12] > .05] <- NA
 pvals.df.50.3.sig[ ,5:12][pvals.df.50.3.sig [,5:12] <=.001] <- "high"
@@ -1193,11 +1181,9 @@ pvals.df.50.3.sig[ ,5:12][pvals.df.50.3.sig [,5:12] =="mid"] <- "**"
 pvals.df.50.3.sig[ ,5:12][pvals.df.50.3.sig [,5:12] =="low"] <-  "*"
 
 
-
-
-
 ```
 
+## save plots for composite figure 3
 
 Plots 100uE 1393
 
@@ -2175,7 +2161,7 @@ ggarrange(a1, c1, b1,  d1,
           label.y = 1,
           ncol = 4, nrow = 6, align="hv"  )
 
-# supplementary 1
+# Figure S3
 ggarrange(a2, c2, b2,d2,
   a7, c7, b7,d7,
    labels = c("A", "B", "C","D",
@@ -2188,7 +2174,7 @@ ggarrange(a2, c2, b2,d2,
 ```
 
 ### 1393 bar graphs of deltas
-###fig4
+
 
 ```{r}
 # TTEST FOR LOOP for deltas compared to 0
@@ -2336,157 +2322,6 @@ pvals.df.100.2.sig[ ,5:12][pvals.df.100.2.sig [,5:12] =="mid"] <- "**"
 pvals.df.100.2.sig[ ,5:12][pvals.df.100.2.sig [,5:12] =="low"] <-  "*"
  
 
-## repeat for 50 
-
-# TTEST FOR LOOP
-ttest.df.50.2 <- growths50_last3 %>% 
-  filter(Strain != 1391) %>% 
-  select( ID, Strain, Ev, Acc, Rep, Week, Growth.del, redf.del, fvfm.del) %>% 
-  filter(Ev==Acc) %>% 
-  filter(Ev != 24)
-ttest.df.50.2$group <- paste(ttest.df.50.2$Strain,ttest.df.50.2$Ev,ttest.df.50.2$Acc,sep='.')
-
-pvals.df.50.2 <- as.data.frame(unique(ttest.df.50.2$group))
-names(pvals.df.50.2) <- 'group'
-pvals.df.50.2$Strain <- ttest.df.50.2$Strain[match(pvals.df.50.2$group,ttest.df.50.2$group)]
-pvals.df.50.2$Ev <- ttest.df.50.2$Ev[match(pvals.df.50.2$group,ttest.df.50.2$group)]
-pvals.df.50.2$Acc <- ttest.df.50.2$Acc[match(pvals.df.50.2$group,ttest.df.50.2$group)]
-pvals.df.50.2$p.value.growth <- NA
-pvals.df.50.2$p.value.redf <- NA
-pvals.df.50.2$p.value.fvfm <- NA
-#GR
-for(i in 1:dim(pvals.df.50.2)[1]){
-  hold <-ttest.df.50.2[ttest.df.50.2$group==pvals.df.50.2$group[i],] %>% 
-    pull(Growth.del)
-  hold.ttest <- t.test(hold)
-  tidy.hold <- tidy(hold.ttest)
-  pvals.df.50.2$p.value.growth[i] <- round(tidy.hold$p.value,3) }
-# REDF
-for(i in 1:dim(pvals.df.50.2)[1]){
-  hold <-ttest.df.50.2[ttest.df.50.2$group==pvals.df.50.2$group[i],] %>% 
-    pull(redf.del)
-  hold.ttest <- t.test(hold)
-  tidy.hold <- tidy(hold.ttest)
-  pvals.df.50.2$p.value.redf[i] <- round(tidy.hold$p.value,3) }
-#FVFM
-for(i in 1:dim(pvals.df.50.2)[1]){
-  hold <-ttest.df.50.2[ttest.df.50.2$group==pvals.df.50.2$group[i],] %>% 
-    pull(fvfm.del)
-  hold.ttest <- t.test(hold)
-  tidy.hold <- tidy(hold.ttest)
-  pvals.df.50.2$p.value.fvfm[i] <- round(tidy.hold$p.value,3) }
-
-## CN
-ttest.df.50.cn <- cn.50_last3 %>% 
-  filter(Strain != 1391) %>% 
-  select( ID, Strain, Ev, Acc, Rep, Week, C.del, N.del) %>% 
-  filter(Ev==Acc) %>% 
-  filter(Ev != 24)
-ttest.df.50.cn$group <- paste(ttest.df.50.cn$Strain,ttest.df.50.cn$Ev,ttest.df.50.cn$Acc,sep='.')
-pvals.df.50.2$p.value.c <- NA
-# C
-for(i in 1:dim(pvals.df.50.2)[1]){
-  hold <-ttest.df.50.cn[ttest.df.50.cn$group==pvals.df.50.2$group[i],] %>% 
-    pull(C.del)
-  hold.ttest <- t.test(hold)
-  tidy.hold <- tidy(hold.ttest)
-  pvals.df.50.2$p.value.c[i] <- round(tidy.hold$p.value,3) }
-
-## Resp
-ttest.df.50.resp <- resp.50_last3 %>% 
-  filter(Strain != 1391) %>% 
-  select( ID, Strain, Ev, Acc, Rep, Week, Resp.del, Photo.del) %>% 
-  filter(Ev==Acc) %>% 
-  filter(Ev != 24) %>% 
-  filter(!is.na(Resp.del))
-ttest.df.50.resp$group <- paste(ttest.df.50.resp$Strain,ttest.df.50.resp$Ev,ttest.df.50.resp$Acc,sep='.')
-pvals.df.50.2$p.value.resp <- NA
-pvals.df.50.2$p.value.photo <- NA
-# resp
-for(i in 1:dim(pvals.df.50.2)[1]){
-  hold <-ttest.df.50.resp[ttest.df.50.resp$group==pvals.df.50.2$group[i],] %>% 
-    pull(Resp.del)
-  hold.ttest <- t.test(hold)
-  tidy.hold <- tidy(hold.ttest)
-  pvals.df.50.2$p.value.resp[i] <- round(tidy.hold$p.value,3) }
-# photo
-for(i in 1:dim(pvals.df.50.2)[1]){
-  hold <-ttest.df.50.resp[ttest.df.50.resp$group==pvals.df.50.2$group[i],] %>% 
-    pull(Photo.del)
-  hold.ttest <- t.test(hold)
-  tidy.hold <- tidy(hold.ttest)
-  pvals.df.50.2$p.value.photo[i] <- round(tidy.hold$p.value,3) }
-
-## Graz
-ttest.df.50.graz <- graz50_last3 %>% 
-  filter(Strain != 1391) %>% 
-  select( ID, Strain, Ev, Acc, Rep, Week, Grazing.del) %>% 
-  filter(Ev==Acc) %>% 
-  filter(Ev != 24) %>% 
-  filter(!is.na(Grazing.del))
-ttest.df.50.graz$group <- paste(ttest.df.50.graz$Strain,ttest.df.50.graz$Ev,ttest.df.50.graz$Acc,sep='.')
-pvals.df.50.2$p.value.graz <- NA
-
-# graz
-for(i in 1:dim(pvals.df.50.2)[1]){
-  hold <-ttest.df.50.graz[ttest.df.50.graz$group==pvals.df.50.2$group[i],] %>% 
-    pull(Grazing.del)
-  hold.ttest <- t.test(hold)
-  tidy.hold <- tidy(hold.ttest)
-  pvals.df.50.2$p.value.graz[i] <- round(tidy.hold$p.value,3) }
-
-## CUE
-
-CUE50_last3_del<- cue.gr.avg.50 
-CUE50_last3_del$Treat.Acc <- paste(CUE50_last3_del$Strain,CUE50_last3_del$Acc,CUE50_last3_del$Rep,sep='.')
-
-CUE50_hold<-cue.gr.avg.50 %>% 
-  filter(Ev == 24)
-CUE50_hold$Treat.Acc <- paste(CUE50_hold$Strain,CUE50_hold$Acc,CUE50_hold$Rep,sep='.')
-
-CUE50_last3_del$cue.ref <- CUE50_hold$CUE[match(CUE50_last3_del$Treat.Acc,CUE50_hold[CUE50_hold$Ev==24,]$Treat.Acc)] 
-
-CUE50_last3_del <- CUE50_last3_del[!is.na(CUE50_last3_del$cue.ref),]
-
-# Match evolved & ancestral reference points
-CUE50_last3_del$cue.propdel <- (CUE50_last3_del$CUE-CUE50_last3_del$cue.ref)/abs(CUE50_last3_del$cue.ref) # Compute rel. difference
-CUE50_last3_del$cue.del <- (CUE50_last3_del$CUE-CUE50_last3_del$cue.ref) # Compute abs difference
-
-## CUE
-ttest.df.50.cue <- CUE50_last3_del %>%
-  select( ID, Strain, Ev, Acc, Rep, cue.del) %>%
-  filter(Ev==Acc) %>%
-  filter(Ev != 24) %>%
-  filter(!is.na(cue.del))
-ttest.df.50.cue$group <- paste(ttest.df.50.cue$Strain,ttest.df.50.cue$Ev,ttest.df.50.cue$Acc,sep='.')
-pvals.df.50.2$p.value.cue <- NA
-
-# cue
-for(i in 1:dim(pvals.df.50.2)[1]){
-  hold <-ttest.df.50.cue[ttest.df.50.cue$group==pvals.df.50.2$group[i],] %>%
-    pull(cue.del)
-  hold.ttest <- t.test(hold)
-  tidy.hold <- tidy(hold.ttest)
-  pvals.df.50.2$p.value.cue[i] <- round(tidy.hold$p.value,3) }
-
-
-
-## data frame of significance
-
-pvals.df.50.2.sig <- pvals.df.50.2
-pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] > .05] <- NA
-pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] <=.001] <- "high"
-pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] <=.01] <-"mid"
-pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] <=.05] <-"low"
-
-pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] == "high"] <- "***"
-pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] =="mid"] <- "**"
-pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] =="low"] <-  "*"
- 
-
-```
-
-```{r}
 # ## repeat for 50 
 # 
 # # TTEST FOR LOOP
@@ -2633,10 +2468,12 @@ pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] =="low"] <-  "*"
 # pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] == "high"] <- "***"
 # pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] =="mid"] <- "**"
 # pvals.df.50.2.sig[ ,5:12][pvals.df.50.2.sig [,5:12] =="low"] <-  "*"
+ 
 
 ```
-
-
+ 
+ Save plots for bar plot and plot composite fig 4
+ 
 ```{r, fig.height=2, fig.width=4}
 #Growth, C/cell, Chla, ETR, Cfix, Graz, Resp
 theme_set(theme_base(base_size = 10)) 
@@ -2989,15 +2826,14 @@ pe$eperc <- pe$P_I.interp * 0.002 * 6.02e+23 * 0.001119183 * 0.000000001 *60 *60
 ev_cols <- c("18" = lcol2, "24" = mcol2, "30" = hcol2)
 ```
 
-
-Photosynthetic capacity using growthTools
-
-First, each temperature seperately
+Photosynthetic capacity using "growthTools"
+First, each temperature separately 
 Average all reps at each temp with confidence intervals
-
 electrons per pgC per day
 
 ```{r}
+# calculate each temperature separately
+
 # divide by 10^15 to make units nicer, add this back in in the axis label
 pe$eperc2 <- pe$eperc / 10^15
 
@@ -3005,10 +2841,8 @@ pe$eperc2 <- pe$eperc / 10^15
 new.grids<-list(topt=seq(20,40,5),w=seq(10,40,5),a=seq(1,-1,-0.5),b=c(-0.05,0,0.05))
 new.start<-list(topt=NA,w=NA,a=NA,b=NA,s=log(2))   
 
-
 sp1_pi3	<- pe	%>% 
   filter(Ev == "18")
-
 nbcurve.traits_pi3	<- get.nbcurve.tpc(sp1_pi3$Assay,	sp1_pi3$eperc2,	method	=
 "grid.mle2", grids=new.grids,start=new.start)
 
@@ -3016,7 +2850,6 @@ sp2_pi3	<- pe	%>%
   filter(Ev == "24")
 nbcurve.traits2_pi3	<- get.nbcurve.tpc(sp2_pi3$Assay,	sp2_pi3$eperc2,	method	=
 "grid.mle2", grids=new.grids,start=new.start)
-
 
 sp3_pi3	<- pe	%>% 
   filter(Ev == "30")
@@ -3039,13 +2872,11 @@ nbcurve.traits3_pi3$tmax
 
 Then temp by color on same plot with confidence intervals, topt, and tmax
 Grouped by temp with confidence intervals
-
 e^-1 per pgC
 
-
+Plot figure 5A
 ```{r}
 #Predict values from a tpc
-
 tmp18_pi3	<- predict(nbcurve.traits_pi3,	se.fit	=	T, newdata = data.frame(temperature=seq(0,45,0.1)))
 tmp24_pi3 <- predict(nbcurve.traits2_pi3,	se.fit	=	T, newdata = data.frame(temperature=seq(0,45,0.1)))
 tmp30_pi3 <- predict(nbcurve.traits3_pi3,	se.fit	=	T, newdata = data.frame(temperature=seq(0,45,0.1)))
@@ -3085,6 +2916,7 @@ ggplot(tmp18_pi3,	aes(x	=	temperature,	y	=	mu))	+
 ```
 
 Smooth spline for fvfm and grazing
+Plot Figure 5B and Figure S4
 
 ```{r}
  
@@ -3101,7 +2933,7 @@ theme(legend.position = "none",
         axis.ticks.length = unit(.1, "cm")) 
   
 
-  #graz attempt
+#grazing
    ggplot(graz, aes(x = Assay, y = graz.C.day)) +
   geom_point(aes(color = as.factor(Ev)), alpha = .5, size = 1.5) +
                scale_color_manual(values = newcols)+
@@ -3115,7 +2947,9 @@ theme(legend.position = "none",
   
 ```
 
-### Supplementary figure 1
+### Supporting Information
+
+Figure S2 all growth rates from back transfer experiments 
 
 ```{r,fig.height= 3, fig.width= 8}
 growths100 <-growths100 %>% 
@@ -3260,57 +3094,8 @@ ggarrange(s1.1, s1.2, s1.3,s1.4,
 
 ```
 
-```{r}
 
-
-s1.5<- ggplot(redf.corr.summ.100.1393.time, 
-       aes(x=Acc, y=redf.corr, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=redf.corr-se, ymax=redf.corr+se), width=1) +
-    geom_line(lwd = 1) +
-    geom_point(size = 3)+
-   facet_grid(cols = vars(Week)) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-    theme(legend.position = "none") 
-s1.6<- ggplot(redf.corr.summ.50.1393.time, 
-       aes(x=Acc, y=redf.corr, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=redf.corr-se, ymax=redf.corr+se), width=1) +
-    geom_line(lwd = 1) +
-    geom_point(size = 3)+
-   facet_grid(cols = vars(Week)) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-    theme(legend.position = "none") 
-
-s1.7<- ggplot(redf.corr.summ.100.2951.time, 
-       aes(x=Acc, y=redf.corr, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=redf.corr-se, ymax=redf.corr+se), width=1) +
-    geom_line(lwd = 1) +
-    geom_point(size = 3)+
-   facet_grid(cols = vars(Week)) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-    theme(legend.position = "none") 
-s1.8<- ggplot(redf.corr.summ.50.2951.time, 
-       aes(x=Acc, y=redf.corr, color=as.factor(Ev))) + 
-    geom_errorbar(aes(ymin=redf.corr-se, ymax=redf.corr+se), width=1) +
-    geom_line(lwd = 1) +
-    geom_point(size = 3)+
-   facet_grid(cols = vars(Week)) +
-    scale_color_manual(values=newcols) +
-    scale_x_continuous(limits = c(17,31),
-                     breaks = c(18,24,30),
-                     expand = c(0,0)) +
-    theme(legend.position = "none") 
-
-```
-
+Figure S1. QAQC showing correlation from extracted chl-a to redf
 
 ```{r}
 qaqc<-read_csv(here::here("data","QAQC_data_Jan2021 - Export data.csv"))
@@ -3346,8 +3131,6 @@ lm_eqn51 <- function(lm.51){
              r2 = format(summary(m)$r.squared, digits = 3)))
     as.character(as.expression(eq));
 }
-
-
 
 ggplot(qaqc, aes(x = RedF, y = ChlperCell, fill = as.factor(Strain)))+
   geom_point(size = 2.5, shape = 21) +
