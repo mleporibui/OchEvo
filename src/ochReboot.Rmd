@@ -1,0 +1,921 @@
+---
+title: "ochramonas2reboot"
+author: "chris paight"
+date: "11/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+
+## R Markdown
+
+```{r import libraries, include=FALSE}
+library("tximport")
+library("readr")
+library("tximportData")
+library("DESeq2")
+library("tidyr")
+library("dplyr")
+library("IHW")
+library("ggplot2")
+library("vsn")
+library("pheatmap")
+library("RColorBrewer")
+```
+```{r import genemap}
+ochgenemap <- read.delim("ochgenemap.txt")
+totalKOrefmap <- read.delim("totalKOrefmap.txt")
+```
+### Compare Cultures adapted to 24C moved to 30C
+```{r import design table/gene map}
+studydesign24 <- read.delim("studydesign24.csv", stringsAsFactors=TRUE)
+```
+
+```{r create DEseq2 24}
+files24 <- file.path(studydesign24$name, "quant.sf")
+files24 <- paste0('mapping/', sep = "", files24)
+txi.salmon24 <- tximport(files24, type = "salmon", tx2gene = ochgenemap)
+ddsTxi24 <- DESeqDataSetFromTximport(txi.salmon24, colData = studydesign24, design = ~treatment)
+keep24 <- rowSums(counts(ddsTxi24)) >= 10
+dds24 <- ddsTxi24[keep24,]
+dds24 <- DESeq(dds24)
+```
+
+```{r results 24}
+res24 <- results(dds24)
+resultsNames(dds24)
+resLFCA24 <- lfcShrink(dds24, coef="treatment_evolved24_vs_adapted30", type="apeglm")
+resOrdered24 <- res24[order(res24$pvalue),]
+resSig24 <- subset(resOrdered24, padj < 0.1)
+sum(res24$padj < 0.1, na.rm=TRUE)
+resIHW24 <- results(dds24, filterFun=ihw)
+sum(resIHW24$padj < 0.1, na.rm=TRUE)
+plotMA(res24, ylim=c(-2,2))
+```
+
+```{r normalization 24}
+resapeglm24 <- lfcShrink(dds24, coef=2, type="apeglm")
+par(mfrow=c(1,3), mar=c(4,4,2,1))
+xlim <- c(1,1e5); ylim <- c(-3,3)
+resNorm24 <- lfcShrink(dds24, coef=2, type="normal")
+plotMA(resNorm24, xlim=xlim, ylim=ylim, main="normal")
+plotCounts(dds24, gene=which.min(res24$padj), intgroup="treatment")
+```
+
+```{r write sig genes to file 24}
+write.csv(as.data.frame(resOrdered24), file="24ordered.csv")
+write.csv(as.data.frame(resSig24), file="24Significantonly.csv")
+```
+
+```{r shrinkage 24}
+rld24 <- rlog(dds24, blind=FALSE)
+ntd24 <- normTransform(dds24)
+vsd24 <- vst(dds24, blind=FALSE)
+meanSdPlot(assay(rld24))
+meanSdPlot(assay(ntd24))
+meanSdPlot(assay(vsd24))
+```
+
+#### Heat Map 
+```{r saveheatmap as pdf function}
+save_pheatmap_pdf <- function(x, filename, width=7, height=7) {
+   stopifnot(!missing(x))
+   stopifnot(!missing(filename))
+   pdf(filename, width=width, height=height)
+   grid::grid.newpage()
+   grid::grid.draw(x$gtable)
+   dev.off()
+}
+
+```
+```{r heatmap 24}
+sampleDists24 <- dist(t(assay(vsd24)))
+sampleDistMatrix24 <- as.matrix(sampleDists24)
+rownames(sampleDistMatrix24) <- paste(vsd24$treatment, vsd24$letter, sep="-")
+colnames(sampleDistMatrix24) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+e24a30heat <- pheatmap(sampleDistMatrix24, clustering_distance_rows=sampleDists24, clustering_distance_cols=sampleDists24, col=colors)
+save_pheatmap_pdf(e24a30heat, "heatmap/e24a30heat.pdf")
+
+```
+
+```{r pca 24}
+pcaData24 <- plotPCA(vsd24, intgroup=c("treatment", "letter"), returnData=TRUE)
+percentVar24 <- round(100 * attr(pcaData24, "percentVar"))
+arch24 <- ggplot(pcaData24, aes(PC1, PC2, color=treatment)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar24[1],"% variance")) + ylab(paste0("PC2: ",percentVar24[2],"% variance")) + geom_text(label=studydesign24$letter, nudge_x = 0.45, nudge_y = 1.5, check_overlap = T)+ coord_fixed() + theme_bw()
+print(arch24)
+ggsave(arch24, file="pca/pcae24a30pca.pdf", width = 8.5, height = 11)
+```
+
+```{r import sample design 30}
+studydesign30 <- read.delim("~/cpaightNAS/cpaight/data/ochramonas/studydesign30.csv", stringsAsFactors=TRUE)
+```
+
+### Compare cultures adapted to 30C moved from 24C to 30C
+
+
+```{r create DEseq2 30}
+files30 <- file.path(studydesign30$name, "quant.sf")
+files30 <- paste0('mapping/', sep = "", files30)
+txi.salmon30 <- tximport(files30, type = "salmon", tx2gene = ochgenemap)
+ddsTxi30 <- DESeqDataSetFromTximport(txi.salmon30, colData = studydesign30, design = ~treatment)
+keep30 <- rowSums(counts(ddsTxi30)) >= 10
+dds30 <- ddsTxi30[keep30,]
+dds30 <- DESeq(dds30)
+```
+
+```{r results 30}
+res30 <- results(dds30)
+resultsNames(dds30)
+resLFCA30 <- lfcShrink(dds30, coef="treatment_evolved30_vs_adapted30", type="apeglm")
+resOrdered30 <- res30[order(res30$pvalue),]
+resSig30 <- subset(resOrdered30, padj < 0.1)
+sum(res30$padj < 0.1, na.rm=TRUE)
+resIHW30 <- results(dds30, filterFun=ihw)
+sum(resIHW30$padj < 0.1, na.rm=TRUE)
+plotMA(res30, ylim=c(-2,2))
+```
+```{r normalization 30}
+resapeglm30 <- lfcShrink(dds30, coef=2, type="apeglm")
+par(mfrow=c(1,3), mar=c(4,4,2,1))
+xlim <- c(1,1e5); ylim <- c(-3,3)
+resNorm30 <- lfcShrink(dds30, coef=2, type="normal")
+plotMA(resNorm30, xlim=xlim, ylim=ylim, main="normal")
+plotCounts(dds30, gene=which.min(res30$padj), intgroup="treatment")
+```
+
+```{r write sig genes to file 30}
+write.csv(as.data.frame(resOrdered30), file="30ordered.csv")
+write.csv(as.data.frame(resSig30), file="30Significantonly.csv")
+```
+
+```{r shrinkage 30}
+rld30 <- rlog(dds30, blind=FALSE)
+ntd30 <- normTransform(dds30)
+vsd30 <- vst(dds30, blind=FALSE)
+meanSdPlot(assay(rld30))
+meanSdPlot(assay(ntd30))
+meanSdPlot(assay(vsd30))
+```
+
+#### HeatMap
+
+```{r heatmap 30}
+sampleDists30 <- dist(t(assay(vsd30)))
+sampleDistMatrix30 <- as.matrix(sampleDists30)
+rownames(sampleDistMatrix30) <- paste(vsd30$treatment, vsd30$letter, sep="-")
+colnames(sampleDistMatrix30) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+e30a30heat <- pheatmap(sampleDistMatrix30, clustering_distance_rows=sampleDists30, clustering_distance_cols=sampleDists30, col=colors)
+save_pheatmap_pdf(e30a30heat, "heatmap/e30a30heat.pdf")
+```
+
+```{r pca 30}
+pcaData30 <- plotPCA(vsd30, intgroup=c("treatment", "letter"), returnData=TRUE)
+percentVar30 <- round(100 * attr(pcaData30, "percentVar"))
+arch30 <- ggplot(pcaData30, aes(PC1, PC2, color=treatment)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar30[1],"% variance")) + ylab(paste0("PC2: ",percentVar30[2],"% variance")) + geom_text(label=studydesign30$letter, nudge_x = 0.45, nudge_y = 1.5, check_overlap = T)+ coord_fixed() + theme_bw()
+print(arch30)
+ggsave(arch30, file="pca/pcae24a30pca.pdf", width = 8.5, height = 11)
+```
+
+
+```{r import 18 design}
+studydesign18 <- read.delim("studydesign18.csv", stringsAsFactors=TRUE)
+```
+
+### Compare cultures adapted to 24C moved to 18C
+
+```{r create DEseq2 object 18}
+files18 <- file.path(studydesign18$name, "quant.sf")
+files18 <- paste0('mapping/', sep = "", files18)
+txi.salmon18 <- tximport(files18, type = "salmon", tx2gene = ochgenemap)
+ddsTxi18 <- DESeqDataSetFromTximport(txi.salmon18, colData = studydesign18, design = ~treatment)
+keep18 <- rowSums(counts(ddsTxi18)) >= 10
+dds18 <- ddsTxi18[keep18,]
+dds18 <- DESeq(dds18)
+```
+
+```{r results 18}
+res18 <- results(dds18)
+resultsNames(dds18)
+resLFCA18 <- lfcShrink(dds18, coef="treatment_evolved18_vs_adapted18", type="apeglm")
+resOrdered18 <- res18[order(res18$pvalue),]
+resSig18 <- subset(resOrdered18, padj < 0.1)
+sum(res18$padj < 0.1, na.rm=TRUE)
+resIHW18 <- results(dds18, filterFun=ihw)
+sum(resIHW18$padj < 0.1, na.rm=TRUE)
+plotMA(res18, ylim=c(-2,2))
+```
+```{r normalization 18}
+resapeglm18 <- lfcShrink(dds18, coef=2, type="apeglm")
+par(mfrow=c(1,3), mar=c(4,4,2,1))
+xlim <- c(1,1e5); ylim <- c(-3,3)
+resNorm18 <- lfcShrink(dds18, coef=2, type="normal")
+plotMA(resNorm18, xlim=xlim, ylim=ylim, main="normal")
+plotCounts(dds18, gene=which.min(res18$padj), intgroup="treatment")
+```
+
+```{r write sig genes to file 18}
+write.csv(as.data.frame(resOrdered18), file="18ordered.csv")
+write.csv(as.data.frame(resSig18), file="18Significantonly.csv")
+```
+
+```{r shirnkage 18}
+rld18 <- rlog(dds18, blind=FALSE)
+ntd18 <- normTransform(dds18)
+vsd18 <- vst(dds18, blind=FALSE)
+meanSdPlot(assay(rld18))
+meanSdPlot(assay(ntd18))
+meanSdPlot(assay(vsd18))
+```
+
+#### HeatMap
+
+```{r heatmap 18}
+sampleDists18 <- dist(t(assay(vsd18)))
+sampleDistMatrix18 <- as.matrix(sampleDists18)
+rownames(sampleDistMatrix18) <- paste(vsd18$treatment, vsd18$letter, sep="-")
+colnames(sampleDistMatrix18) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+e18a18heat <- pheatmap(sampleDistMatrix18, clustering_distance_rows=sampleDists18, clustering_distance_cols=sampleDists18, col=colors)
+save_pheatmap_pdf(e18a18heat, "heatmap/e18a18heat.pdf")
+```
+
+```{r pca 18}
+pcaData18 <- plotPCA(vsd18, intgroup=c("treatment", "letter"), returnData=TRUE)
+percentVar18 <- round(100 * attr(pcaData18, "percentVar"))
+arch18 <- ggplot(pcaData18, aes(PC1, PC2, color=treatment)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar18[1],"% variance")) + ylab(paste0("PC2: ",percentVar18[2],"% variance")) + geom_text(label=studydesign18$letter, nudge_x = 0.45, nudge_y = 1.5, check_overlap = T) + coord_fixed() + theme_bw()
+print(arch18)
+ggsave(arch18, file="pca/pcae18a18pca.pdf", width = 8.5, height = 11)
+```
+```{r import stadydesign low24}
+studydesignlow24 <- read.delim("studydesignlow24.cvs", stringsAsFactors=TRUE)
+```
+
+### Compare cultures adapted to 18C moved from 24C to 18C
+
+```{r create DEseq2 object low24}
+fileslow24 <- file.path(studydesignlow24$name, "quant.sf")
+fileslow24 <- paste0('mapping/', sep = "", fileslow24)
+txi.salmonlow24 <- tximport(fileslow24, type = "salmon", tx2gene = ochgenemap)
+ddsTxilow24 <- DESeqDataSetFromTximport(txi.salmonlow24, colData = studydesignlow24, design = ~treatment)
+keeplow24 <- rowSums(counts(ddsTxilow24)) >= 10
+ddslow24 <- ddsTxilow24[keeplow24,]
+ddslow24 <- DESeq(ddslow24)
+```
+
+```{r results low24}
+reslow24 <- results(ddslow24)
+resultsNames(ddslow24)
+resLFCAlow24 <- lfcShrink(ddslow24, coef="treatment_evolved24_vs_adapted18", type="apeglm")
+resOrderedlow24 <- reslow24[order(reslow24$pvalue),]
+resSiglow24 <- subset(resOrderedlow24, padj < 0.1)
+sum(reslow24$padj < 0.1, na.rm=TRUE)
+resIHWlow24 <- results(ddslow24, filterFun=ihw)
+sum(resIHWlow24$padj < 0.1, na.rm=TRUE)
+plotMA(reslow24, ylim=c(-2,2))
+```
+
+
+```{r normalization low24}
+resapeglmlow24 <- lfcShrink(ddslow24, coef=2, type="apeglm")
+par(mfrow=c(1,3), mar=c(4,4,2,1))
+xlim <- c(1,1e5); ylim <- c(-3,3)
+resNormlow24 <- lfcShrink(ddslow24, coef=2, type="normal")
+plotMA(resNormlow24, xlim=xlim, ylim=ylim, main="normal")
+plotCounts(ddslow24, gene=which.min(reslow24$padj), intgroup="treatment")
+```
+
+```{r write sig genes to file low24}
+write.csv(as.data.frame(resOrderedlow24), file="low24ordered.csv")
+write.csv(as.data.frame(resSiglow24), file="low24Significantonly.csv")
+```
+
+```{r shrinkage low24}
+rldlow24 <- rlog(ddslow24, blind=FALSE)
+ntdlow24 <- normTransform(ddslow24)
+vsdlow24 <- vst(ddslow24, blind=FALSE)
+meanSdPlot(assay(rldlow24))
+meanSdPlot(assay(ntdlow24))
+meanSdPlot(assay(vsdlow24))
+```
+
+#### HeatMap
+
+```{r heatmap low24}
+sampleDistslow24 <- dist(t(assay(vsdlow24)))
+sampleDistMatrixlow24 <- as.matrix(sampleDistslow24)
+rownames(sampleDistMatrixlow24) <- paste(vsdlow24$treatment, vsdlow24$letter, sep="-")
+colnames(sampleDistMatrixlow24) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+e24a18heat <- pheatmap(sampleDistMatrixlow24, clustering_distance_rows=sampleDistslow24, clustering_distance_cols=sampleDistslow24, col=colors)
+save_pheatmap_pdf(e24a18heat, "heatmap/e24a18heat.pdf")
+```
+
+```{r pca low24}
+pcaDatalow24 <- plotPCA(vsdlow24, intgroup=c("treatment", "letter"), returnData=TRUE)
+percentVarlow24 <- round(100 * attr(pcaDatalow24, "percentVar"))
+archlow24 <- ggplot(pcaDatalow24, aes(PC1, PC2, color=treatment)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVarlow24[1],"% variance")) + ylab(paste0("PC2: ",percentVarlow24[2],"% variance")) + geom_text(label=studydesignlow24$letter, nudge_x = 0.45, nudge_y = 1.5, check_overlap = T) +coord_fixed() + theme_bw()
+print(archlow24)
+ggsave(archlow24, file="pca/pcae24a18pca.pdf", width = 8.5, height = 11)
+```
+
+### Annotated Differential Expression
+```{r fold change by catagory}
+resSig30.2fold <- subset(resSig30, log2FoldChange < -2 |log2FoldChange > 2)
+df.30.2fold <-  data.frame(Knum=resSig30.2fold@rownames, fold=resSig30.2fold@listData$log2FoldChange)
+df.30.2foldannotated <- merge(df.30.2fold, totalKOrefmap, by=c('Knum'), all.x=TRUE)
+df.30.2foldannotated[is.na(df.30.2foldannotated)] <- 'unannotated'
+fold.30 <- ggplot(df.30.2foldannotated, aes(x=catagory, y=fold))+geom_point(size=1, alpha=1, position=position_jitter(w=0.3, h=0))+theme(axis.text.x=element_text(angle=60,hjust=1))+labs(title = 'Fold difference by catagory', subtitle = 'Evolved at 24C Adapted to 30C vs Evolved at 30C', x='Kegg catagory', Y='Fold Expression Change')
+print(fold.30)
+ggsave(fold.30, file="pca/foldCatagorye24e30.pdf", width = 8.5, height = 11)
+resSig24.2fold <- subset(resSig24, log2FoldChange < -2 |log2FoldChange > 2)
+df.24.2fold <-  data.frame(Knum=resSig24.2fold@rownames, fold=resSig24.2fold@listData$log2FoldChange)
+df.24.2foldannotated <- merge(df.24.2fold, totalKOrefmap, by=c('Knum'), all.x=TRUE)
+df.24.2foldannotated[is.na(df.24.2foldannotated)] <- 'unannotated'
+fold.24 <- ggplot(df.24.2foldannotated, aes(x=catagory, y=fold))+geom_point(size=1, alpha=1, position=position_jitter(w=0.3, h=0))+theme(axis.text.x=element_text(angle=60,hjust=1))+labs(title = 'Fold difference by catagory', subtitle = 'Evolved at 24C Adapted to 30C vs Evolved at 24C', x='Kegg catagory', Y='Fold Expression Change')
+print(fold.24)
+ggsave(fold.24, file="pca/fold24.pdf", width = 8.5, height = 11)
+resSig18.2fold <- subset(resSig18, log2FoldChange < -2 |log2FoldChange > 2)
+df.18.2fold <-  data.frame(Knum=resSig18.2fold@rownames, fold=resSig18.2fold@listData$log2FoldChange)
+df.18.2foldannotated <- merge(df.18.2fold, totalKOrefmap, by=c('Knum'), all.x=TRUE)
+df.18.2foldannotated[is.na(df.18.2foldannotated)] <- 'unannotated'
+fold.18 <- ggplot(df.18.2foldannotated, aes(x=catagory, y=fold))+geom_point(size=1, alpha=1, position=position_jitter(w=0.3, h=0))+theme(axis.text.x=element_text(angle=60,hjust=1))+labs(title = 'Fold difference by catagory', subtitle = 'Evolved at 24C Adapted to 18C vs Evolved at 18C', x='Kegg catagory', Y='Fold Expression Change')
+print(fold.18)
+ggsave(fold.18, file="pca/fold18.pdf", width = 8.5, height = 11)
+resSiglow24.2fold <- subset(resSiglow24, log2FoldChange < -2 |log2FoldChange > 2)
+df.low24.2fold <-  data.frame(Knum=resSiglow24.2fold@rownames, fold=resSiglow24.2fold@listData$log2FoldChange)
+df.low24.2foldannotated <- merge(df.low24.2fold, totalKOrefmap, by=c('Knum'), all.x=TRUE)
+df.low24.2foldannotated[is.na(df.low24.2foldannotated)] <- 'unannotated'
+fold.low24 <- ggplot(df.low24.2foldannotated, aes(x=catagory, y=fold))+geom_point(size=1, alpha=1, position=position_jitter(w=0.3, h=0))+theme(axis.text.x=element_text(angle=60,hjust=1))+labs(title = 'Fold difference by catagory', subtitle = 'Evolved at 24C adapted to 18C vs Evolved at 24C', x='Kegg catagory', Y='Fold Expression Change')
+print(fold.low24)
+ggsave(fold.low24, file="pca/foldlow24.pdf", width = 8.5, height = 11)
+```
+<br>
+<br>
+<br>
+
+### Summary Statistics 
+
+```{r resultname 30, echo=FALSE} 
+resultsNames(dds30)
+```
+There are **`r sum(res30$padj < 0.1, na.rm=TRUE)`** differential expressed genes
+<br>
+There are **`r nrow(subset(resSig30, log2FoldChange < -2))`** genes with 2 fold down regulation
+<br>
+There are **`r nrow(subset(resSig30, log2FoldChange > 2))`** genes with 2 fold up regulation 
+
+```{r resultname 24, echo=FALSE}
+resultsNames(dds24)
+```
+
+There are **`r sum(res24$padj < 0.1, na.rm=TRUE)`** differential expressed genes
+<br>
+There are **`r nrow(subset(resSig24, log2FoldChange < -2))`** genes with 2 fold down regulation
+<br>
+There are **`r nrow(subset(resSig24, log2FoldChange > 2))`** genes with 2 fold up regulation 
+
+```{r resultname 18, echo=FALSE}
+resultsNames(dds18)
+```
+
+There are **`r sum(res18$padj < 0.1, na.rm=TRUE)`** differential expressed genes
+<br>
+There are **`r nrow(subset(resSig18, log2FoldChange < -2))`** genes with 2 fold down regulation 
+<br>
+There are **`r nrow(subset(resSig18, log2FoldChange > 2))`** genes with 2 fold up regulation 
+
+```{r resultname low24, echo=FALSE} 
+resultsNames(ddslow24)
+```
+
+There are **`r sum(reslow24$padj < 0.1, na.rm=TRUE)`** differential expressed genes
+<br>
+There are **`r nrow(subset(resSiglow24, log2FoldChange < -2))`** genes with 2 fold down regulation
+<br>
+There are **`r nrow(subset(resSiglow24, log2FoldChange > 2))`** genes with 2 fold up regulation 
+
+```{r write tables to file}
+twofolddown18 <- subset(resSig18, log2FoldChange < -2)
+twofoldup18 <- subset(resSig18, log2FoldChange > 2)
+write.table(twofolddown18, file='twofolddown18.txt', sep='\t', quote=FALSE, row.names=TRUE)
+write.table(twofoldup18, file='twofoldup18.txt', sep='\t', quote=FALSE, row.names=TRUE)
+
+twofolddown24 <- subset(resSig24, log2FoldChange < -2)
+twofoldup24 <- subset(resSig24, log2FoldChange > 2)
+write.table(twofolddown24, file='twofolddown24.txt', sep='\t', quote=FALSE, row.names=TRUE)
+write.table(twofoldup24, file='twofoldup24.txt', sep='\t', quote=FALSE, row.names=TRUE)
+
+twofolddown30 <- subset(resSig30, log2FoldChange < -2)
+twofoldup30 <- subset(resSig30, log2FoldChange > 2)
+write.table(twofolddown30, file='twofolddown30.txt', sep='\t', quote=FALSE, row.names=TRUE)
+write.table(twofoldup30, file='twofoldup30.txt', sep='\t', quote=FALSE, row.names=TRUE)
+
+twofolddownlow24 <- subset(resSiglow24, log2FoldChange < -2)
+twofolduplow24 <- subset(resSiglow24, log2FoldChange > 2)
+write.table(twofolddownlow24, file='twofolddownlow24.txt', sep='\t', quote=FALSE, row.names=TRUE)
+write.table(twofolduplow24, file='twofolduplow24.txt', sep='\t', quote=FALSE, row.names=TRUE)
+```
+
+```{bash sed cutter}
+grep 'K' twofolddown18.txt > twofolddown18k.txt
+sed -i -r 's/(K[0-9]+).+/\1\tred/' twofolddown18k.txt
+grep 'K' twofoldup18.txt > twofoldup18k.txt
+sed -i -r 's/(K[0-9]+).+/\1\tblue/' twofoldup18k.txt
+cat twofolddown18k.txt twofoldup18k.txt > sig2fold18.txt
+
+grep 'K' twofolddown24.txt > twofolddown24k.txt
+sed -i -r 's/(K[0-9]+).+/\1\tred/' twofolddown24k.txt
+grep 'K' twofoldup24.txt > twofoldup24k.txt
+sed -i -r 's/(K[0-9]+).+/\1\tblue/' twofoldup24k.txt
+cat twofolddown24k.txt twofoldup24k.txt > sig2fold24.txt
+
+grep 'K' twofolddown30.txt > twofolddown30k.txt
+sed -i -r 's/(K[0-9]+).+/\1\tred/' twofolddown30k.txt
+grep 'K' twofoldup30.txt > twofoldup30k.txt
+sed -i -r 's/(K[0-9]+).+/\1\tblue/' twofoldup30k.txt
+cat twofolddown30k.txt twofoldup30k.txt > sig2fold30.txt
+
+grep 'K' twofolddownlow24.txt > twofolddownlow24k.txt
+sed -i -r 's/(K[0-9]+).+/\1\tred/' twofolddownlow24k.txt
+grep 'K' twofolduplow24.txt > twofolduplow24k.txt
+sed -i -r 's/(K[0-9]+).+/\1\tblue/' twofolduplow24k.txt
+cat twofolddownlow24k.txt twofolduplow24k.txt > sig2foldlow24.txt
+```
+
+```{r all treatments}
+studydesignall <- read.delim("studydesignall.csv", stringsAsFactors=TRUE)
+```
+```{r create DEseq2 all}
+filesall <- file.path(studydesignall$name, "quant.sf")
+filesall <- paste0('mapping/', sep = "", filesall)
+txi.salmonall <- tximport(filesall, type = "salmon", tx2gene = ochgenemap)
+ddsTxiall <- DESeqDataSetFromTximport(txi.salmonall, colData = studydesignall, design = ~treatment)
+ddsTxiall$treatment <- relevel(ddsTxiall$treatment, ref = "evolved24")
+keepall <- rowSums(counts(ddsTxiall)) >= 10
+ddsall <- ddsTxiall[keepall,]
+ddsall <- DESeq(ddsall)
+```
+
+```{r results all}
+resall <- results(ddsall)
+resultsNames(ddsall)
+resOrderedall <- resall[order(resall$pvalue),]
+resSigall <- subset(resOrderedall, padj < 0.1)
+sum(resall$padj < 0.1, na.rm=TRUE)
+resIHWall <- results(ddsall, filterFun=ihw)
+sum(resIHWall$padj < 0.1, na.rm=TRUE)
+plotMA(resall, ylim=c(-2,2))
+```
+```{r pairwise to 24}
+resA18to24 <- results(ddsall, name="treatment_adapted18_vs_evolved24")
+resA30to24 <- results(ddsall, name="treatment_adapted30_vs_evolved24")
+resE18to24 <- results(ddsall, name="treatment_evolved18_vs_evolved24")
+resE30to24 <- results(ddsall, name="treatment_evolved30_vs_evolved24")
+
+df.A18to24.2fold <-  data.frame(Knum=resA18to24@rownames, fold=resA18to24@listData$log2FoldChange, basemean=resA18to24@listData$baseMean, SE=resA18to24@listData$lfcSE, pvalue=resA18to24@listData$pvalue, padj=resA18to24@listData$padj)
+
+df.A30to24.2fold <-  data.frame(Knum=resA30to24@rownames, fold=resA30to24@listData$log2FoldChange, basemean=resA30to24@listData$baseMean, SE=resA30to24@listData$lfcSE, pvalue=resA30to24@listData$pvalue, padj=resA30to24@listData$padj)
+
+df.E18to24.2fold <-  data.frame(Knum=resE18to24@rownames, fold=resE18to24@listData$log2FoldChange, basemean=resE18to24@listData$baseMean, SE=resE18to24@listData$lfcSE, pvalue=resE18to24@listData$pvalue, padj=resE18to24@listData$padj)
+
+df.E30to24.2fold <-  data.frame(Knum=resE30to24@rownames, fold=resE30to24@listData$log2FoldChange, basemean=resE30to24@listData$baseMean, SE=resE30to24@listData$lfcSE, pvalue=resE30to24@listData$pvalue, padj=resE30to24@listData$padj)
+
+df.30.2fold <- data.frame(Knum=res30@rownames, fold=res30@listData$log2FoldChange, basemean=res30@listData$baseMean, SE=res30@listData$lfcSE, pvalue=res30@listData$pvalue, padj=res30@listData$padj)
+
+df.18.2fold <- data.frame(Knum=res18@rownames, fold=res18@listData$log2FoldChange, basemean=res18@listData$baseMean, SE=res18@listData$lfcSE, pvalue=res18@listData$pvalue, padj=res18@listData$padj)
+
+resOrderedA18to24 <- resA18to24[order(resA18to24$pvalue),]
+resOrderedA30to24 <- resA30to24[order(resA30to24$pvalue),]
+resOrderedE18to24 <- resE18to24[order(resE18to24$pvalue),]
+resOrderedE30to24 <- resE30to24[order(resE30to24$pvalue),]
+resSigA18to24 <- subset(resOrderedA18to24, padj < 0.1)
+resSigA30to24 <- subset(resOrderedA30to24, padj < 0.1)
+resSigE18to24 <- subset(resOrderedE18to24, padj < 0.1)
+resSigE30to24  <- subset(resOrderedE30to24, padj < 0.1)
+write.csv(as.data.frame(resSigA18to24), file="resSigA18to24.csv")
+write.csv(as.data.frame(resSigA30to24), file="resSigA30to24.csv")
+write.csv(as.data.frame(resSigE18to24), file="resSigE18to24.csv")
+write.csv(as.data.frame(resSigE30to24), file="resSigE30to24.csv")
+resSigA18to24.2fold <- subset(resSigA18to24, log2FoldChange < -2 |log2FoldChange > 2)
+resSigA30to24.2fold <- subset(resSigA30to24, log2FoldChange < -2 |log2FoldChange > 2)
+resSigE18to24.2fold <- subset(resSigE18to24, log2FoldChange < -2 |log2FoldChange > 2)
+resSigE30to24.2fold <- subset(resSigE30to24 , log2FoldChange < -2 |log2FoldChange > 2)
+
+#df.A18to24.2fold <-  data.frame(Knum=resSigA18to24.2fold@rownames, fold=resSigA18to24.2fold@listData$log2FoldChange, basemean=resSigA18to24.2fold@listData$baseMean, SE=resSigA18to24.2fold@listData$lfcSE, pvalue=resSigA18to24.2fold@listData$pvalue, padj=resSigA18to24.2fold@listData$padj)
+
+#df.A30to24.2fold <-  data.frame(Knum=resSigA30to24.2fold@rownames, fold=resSigA30to24.2fold@listData$log2FoldChange, basemean=resSigA30to24.2fold@listData$baseMean, SE=resSigA30to24.2fold@listData$lfcSE, pvalue=resSigA30to24.2fold@listData$pvalue, padj=resSigA30to24.2fold@listData$padj)
+
+#df.E18to24.2fold <-  data.frame(Knum=resSigE18to24.2fold@rownames, fold=resSigE18to24.2fold@listData$log2FoldChange, basemean=resSigE18to24.2fold@listData$baseMean, SE=resSigE18to24.2fold@listData$lfcSE, pvalue=resSigE18to24.2fold@listData$pvalue, padj=resSigE18to24.2fold@listData$padj)
+
+#df.E30to24.2fold <-  data.frame(Knum=resSigE30to24.2fold@rownames, fold=resSigE30to24.2fold@listData$log2FoldChange, basemean=resSigE30to24.2fold@listData$baseMean, SE=resSigE30to24.2fold@listData$lfcSE, pvalue=resSigE30to24.2fold@listData$pvalue, padj=resSigE30to24.2fold@listData$padj)
+
+#df.30.2fold <- data.frame(Knum=resSig30.2fold@rownames, fold=resSig30.2fold@listData$log2FoldChange, basemean=resSig30.2fold@listData$baseMean, SE=resSig30.2fold@listData$lfcSE, pvalue=resSig30.2fold@listData$pvalue, padj=resSig30.2fold@listData$padj)
+
+#df.18.2fold <- data.frame(Knum=resSig18.2fold@rownames, fold=resSig18.2fold@listData$log2FoldChange, basemean=resSig18.2fold@listData$baseMean, SE=resSig18.2fold@listData$lfcSE, pvalue=resSig18.2fold@listData$pvalue, padj=resSig18.2fold@listData$padj)
+
+
+df.A18to24.2fold$pair <- "foldchange.A18.24"
+df.A30to24.2fold$pair <- "foldchange.A30.24"
+df.E18to24.2fold$pair<- "foldchange.E18.24"
+df.E30to24.2fold$pair <- "foldchange.E30.24"
+df.18.2fold$pair  <- "foldchange.A18.18"  
+df.30.2fold$pair  <- "foldchange.A30.30"  
+
+FullDifTable <- rbind(df.A18to24.2fold, df.A30to24.2fold)
+FullDifTable <- rbind(FullDifTable, df.E18to24.2fold)
+FullDifTable <- rbind(FullDifTable, df.E30to24.2fold)
+FullDifTable <- rbind(FullDifTable, df.18.2fold)
+FullDifTable <- rbind(FullDifTable, df.30.2fold)
+
+FullDifTableTest <- FullDifTable
+
+FullDifTableTest1 <- FullDifTableTest %>%
+  mutate(EvoAcc = c("", "Yes")[((pair =="foldchange.A18.18"| pair == "foldchange.A30.30") &
+                                     (fold <= -2 |fold>=2) &
+                                     padj < 0.1)+1] )
+
+FullDifTableTest2 <- FullDifTableTest1 %>%
+  mutate(AccCon = c("", "Yes")[((pair == "foldchange.A18.24"| pair == "foldchange.A30.24") &
+                                  (fold <= -2 |fold>=2) &
+                                  padj < 0.1)+1] )
+
+FullDifTableTest3 <- FullDifTableTest2 %>%
+  mutate(EvoCon = c("", "Yes")[((pair == "foldchange.E18.24"| pair== "foldchange.E30.24") &
+                                  (fold <= -2 |fold>=2) &
+                                  padj < 0.1)+1] )
+
+FullDifTableTestTable <- FullDifTableTest %>%
+  mutate(down = c(0, 1)[(
+                                  fold <= -2 &
+                                  padj < 0.1)+1] )
+
+FullDifTableTestTable1 <- FullDifTableTestTable %>%
+  mutate(up = c(0, 1)[(
+                                  fold >= 2 &
+                                  padj < 0.1)+1] )
+
+FullDifTableTestTable1[, c(8:9)] <- sapply(FullDifTableTestTable1[, c(8:9)], as.numeric)
+
+FullDifTableTestTable1 %>% group_by(pair) %>% summarise_at(c('down','up'), sum, na.rm=TRUE)
+
+FullDifTableTestTable2 <- FullDifTableTestTable1 %>%
+  mutate(Temp = c("Hot", "cold")[(pair =="foldchange.A18.18"| pair == "foldchange.A18.24" |pair=="foldchange.E18.24")+1])
+
+colddown <- FullDifTableTestTable2 %>% filter(down==1&Temp=='cold') %>% group_by(Temp) %>%  count(Knum, sort=T)
+coldup <- FullDifTableTestTable2 %>% filter(up==1&Temp=='cold') %>% group_by(Temp) %>%  count(Knum, sort=T)
+hotdown <- FullDifTableTestTable2 %>% filter(down==1&Temp=='Hot') %>% group_by(Temp) %>%  count(Knum, sort=T)
+hotup <- FullDifTableTestTable2 %>% filter(up==1&Temp=='Hot') %>% group_by(Temp) %>%  count(Knum, sort=T)
+
+NewTableOfeveything <- merge(AllPairwiseAnnotatedLong1, FullDifTable, by=c('Knum','pair'), all.x=T)
+NewTableOfeveything$DifExp <- ifelse(NewTableOfeveything$fold > 2 | NewTableOfeveything$fold < -2 & NewTableOfeveything$pvalue <0.1, 'yes', 'no')
+ NewTableOfeveything$group <- ifelse(NewTableOfeveything$pair == 'foldchange.A18.18' | NewTableOfeveything$pair == 'foldchange.A30.30', 'exp', 'control')
+ 
+The24Pairs <- NewTableOfeveything[NewTableOfeveything$group == 'control', ]
+TheExpePairs <- NewTableOfeveything[NewTableOfeveything$group == 'exp', ]
+The24Pairs <- The24Pairs %>% group_by(Knum) %>% mutate(DifferentFrom24=any(DifExp=='yes')) 
+TheExpePairs <- TheExpePairs %>% group_by(Knum) %>% mutate(DifferentFromEvolved=any(DifExp=='yes'))
+TheExpePairsSubset <- TheExpePairs[,c(1,15)]
+Merge24Pairs <- merge(The24Pairs, TheExpePairsSubset, by=c('Knum'), all.x=TRUE)
+#AllPairwise <- merge(df.A18to24.2fold, df.A30to24.2fold, by=c('Knum'), all=TRUE)
+#AllPairwise <- merge(AllPairwise, df.E18to24.2fold, by=c('Knum'), all=TRUE)
+#AllPairwise <- merge(AllPairwise, df.E30to24.2fold, by=c('Knum'), all=TRUE)
+#AllPairwise <- merge(AllPairwise, df.18.2fold, by=c('Knum'), all=TRUE)
+#AllPairwise <- merge(AllPairwise, df.30.2fold, by=c('Knum'), all=TRUE)
+
+#AllPairwiseannotated <- merge(AllPairwise2, totalKOrefmap, by=c('Knum'), all.x=TRUE)
+#AllPairwiseannotated1 <- AllPairwiseannotated[,c(-2:7)]
+#AllPairwiseAnnotatedLong <- AllPairwiseannotated1 %>%  pivot_longer(-c(1,8:11), names_to = "pair", values_to = "foldchange")
+
+```
+
+```{r normalization all}
+resapeglmall <- lfcShrink(ddsall, coef=2, type="apeglm")
+par(mfrow=c(1,3), mar=c(4,4,2,1))
+xlim <- c(1,1e5); ylim <- c(-3,3)
+resNormall <- lfcShrink(ddsall, coef=2, type="normal")
+plotMA(resNormall, xlim=xlim, ylim=ylim, main="normal")
+plotCounts(ddsall, gene=which.min(resall$padj), intgroup="treatment")
+```
+
+```{r write sig genes to file all}
+write.csv(as.data.frame(resOrderedall), file="allordered.csv")
+write.csv(as.data.frame(resSigall), file="allSignificantonly.csv")
+```
+
+```{r shrinkage all}
+rldall <- rlog(ddsall, blind=FALSE)
+ntdall <- normTransform(ddsall)
+vsdall <- vst(ddsall, blind=FALSE)
+meanSdPlot(assay(rldall))
+meanSdPlot(assay(ntdall))
+meanSdPlot(assay(vsdall))
+```
+
+#### Heat Map 
+
+```{r heatmap all}
+sampleDistsall <- dist(t(assay(vsdall)))
+sampleDistMatrixall <- as.matrix(sampleDistsall)
+rownames(sampleDistMatrixall) <- paste(vsdall$treatment, vsdall$letter, sep="-")
+colnames(sampleDistMatrixall) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+allheatmap <- pheatmap(sampleDistMatrixall, clustering_distance_rows=sampleDistsall, clustering_distance_cols=sampleDistsall, col=colors)
+save_pheatmap_pdf(allheatmap , "heatmap/allheatmap .pdf")
+```
+
+```{r pca all}
+pcaDataall <- plotPCA(vsdall, intgroup=c("treatment", "letter"), returnData=TRUE)
+percentVarall <- round(100 * attr(pcaDataall, "percentVar"))
+archall <- ggplot(pcaDataall, aes(PC1, PC2, color=treatment)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVarall[1],"% variance")) + ylab(paste0("PC2: ",percentVarall[2],"% variance")) + geom_text(label=studydesignall$letter, nudge_x = 0.45, nudge_y = 1.5, check_overlap = T)+ coord_fixed() + theme_bw()
+print(archall)
+ggsave(archall, file="pca/allpca.pdf", width = 8.5, height = 11)
+#get gene names from pca
+#rv <- rowVars(assay(vsdall))
+#select <- order(rv, decreasing=TRUE)[seq_len(min(500, length(rv)))]
+#areyoumygenes <- t(assay(vsdall)[select,])
+```
+
+```{r evolved treatments}
+studydesignevolved <- read.delim("studydesignevolved.csv", stringsAsFactors=TRUE)
+```
+```{r create DEseq2 evolved}
+filesevolved <- file.path(studydesignevolved$name, "quant.sf")
+filesevolved <- paste0('mapping/', sep = "", filesevolved)
+txi.salmonevolved <- tximport(filesevolved, type = "salmon", tx2gene = ochgenemap)
+ddsTxievolved <- DESeqDataSetFromTximport(txi.salmonevolved, colData = studydesignevolved, design = ~treatment)
+keepevolved <- rowSums(counts(ddsTxievolved)) >= 10
+ddsevolved <- ddsTxievolved[keepevolved,]
+ddsevolved$treatment <- relevel(ddsevolved$treatment, ref = "evolved24")
+ddsevolved <- DESeq(ddsevolved)
+resevolved18to24 <- results(ddsevolved, name="treatment_evolved18_vs_evolved24")
+resevolved30to24 <- results(ddsevolved, name="treatment_evolved30_vs_evolved24")
+```
+
+
+```{r results evolved}
+resevolved <- results(ddsevolved)
+resultsNames(ddsevolved)
+resOrderedevolved <- resevolved[order(resevolved$pvalue),]
+resSigevolved <- subset(resOrderedevolved, padj < 0.1)
+sum(resevolved$padj < 0.1, na.rm=TRUE)
+resIHWevolved <- results(ddsevolved, filterFun=ihw)
+sum(resIHWevolved$padj < 0.1, na.rm=TRUE)
+plotMA(resevolved, ylim=c(-2,2))
+```
+
+```{r normalization evolved}
+resapeglmevolved <- lfcShrink(ddsevolved, coef=2, type="apeglm")
+par(mfrow=c(1,3), mar=c(4,4,2,1))
+xlim <- c(1,1e5); ylim <- c(-3,3)
+resNormevolved <- lfcShrink(ddsevolved, coef=2, type="normal")
+plotMA(resNormevolved, xlim=xlim, ylim=ylim, main="normal")
+plotCounts(ddsevolved, gene=which.min(resevolved$padj), intgroup="treatment")
+```
+
+```{r write sig genes to file evolved}
+write.csv(as.data.frame(resOrderedevolved), file="evolvedordered.csv")
+write.csv(as.data.frame(resSigevolved), file="evolvedSignificantonly.csv")
+```
+
+```{r shrinkage evolved}
+rldevolved <- rlog(ddsevolved, blind=FALSE)
+ntdevolved <- normTransform(ddsevolved)
+vsdevolved <- vst(ddsevolved, blind=FALSE)
+meanSdPlot(assay(rldevolved))
+meanSdPlot(assay(ntdevolved))
+meanSdPlot(assay(vsdevolved))
+```
+
+#### Heat Map 
+
+```{r heatmap evolved}
+sampleDistsevolved <- dist(t(assay(vsdevolved)))
+sampleDistMatrixevolved <- as.matrix(sampleDistsevolved)
+rownames(sampleDistMatrixevolved) <- paste(vsdevolved$treatment, vsdevolved$letter, sep="-")
+colnames(sampleDistMatrixevolved) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+evolvedheatmap <- pheatmap(sampleDistMatrixevolved, clustering_distance_rows=sampleDistsevolved, clustering_distance_cols=sampleDistsevolved, col=colors)
+save_pheatmap_pdf(evolvedheatmap , "heatmap/evolvedheatmap.pdf")
+```
+
+```{r pca evolved}
+pcaDataevolved <- plotPCA(vsdevolved, intgroup=c("treatment", "letter"), returnData=TRUE)
+percentVarevolved <- round(100 * attr(pcaDataevolved, "percentVar"))
+archevolved <- ggplot(pcaDataevolved, aes(PC1, PC2, color=treatment)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVarevolved[1],"% variance")) + ylab(paste0("PC2: ",percentVarevolved[2],"% variance")) + geom_text(label=studydesignevolved$letter, nudge_x = 0.45, nudge_y = 1.5, check_overlap = T)+ coord_fixed() + theme_bw()
+print(archevolved)
+ggsave(archevolved, file="pca/evolvedpca.pdf", width = 8.5, height = 11)
+```
+```{r change treatments}
+studydesignchange <- read.delim("~/cpaightNAS/cpaight/data/ochramonas/studydesignchange.csv", stringsAsFactors=TRUE)
+```
+```{r create DEseq2 change}
+fileschange <- file.path(studydesignchange$name, "quant.sf")
+fileschange <- paste0('mapping/', sep = "", fileschange)
+txi.salmonchange <- tximport(fileschange, type = "salmon", tx2gene = ochgenemap)
+ddsTxichange <- DESeqDataSetFromTximport(txi.salmonchange, colData = studydesignchange, design = ~treatment)
+keepchange <- rowSums(counts(ddsTxichange)) >= 10
+ddschange <- ddsTxichange[keepchange,]
+ddschange <- DESeq(ddschange)
+```
+
+```{r results change}
+reschange <- results(ddschange)
+resultsNames(ddschange)
+resOrderedchange <- reschange[order(reschange$pvalue),]
+resSigchange <- subset(resOrderedchange, padj < 0.1)
+sum(reschange$padj < 0.1, na.rm=TRUE)
+resIHWchange <- results(ddschange, filterFun=ihw)
+sum(resIHWchange$padj < 0.1, na.rm=TRUE)
+plotMA(reschange, ylim=c(-2,2))
+```
+
+```{r normalization change}
+resapeglmchange <- lfcShrink(ddschange, coef=2, type="apeglm")
+par(mfrow=c(1,3), mar=c(4,4,2,1))
+xlim <- c(1,1e5); ylim <- c(-3,3)
+resNormchange <- lfcShrink(ddschange, coef=2, type="normal")
+plotMA(resNormchange, xlim=xlim, ylim=ylim, main="normal")
+plotCounts(ddschange, gene=which.min(reschange$padj), intgroup="treatment")
+```
+
+```{r write sig genes to file change}
+write.csv(as.data.frame(resOrderedchange), file="changeordered.csv")
+write.csv(as.data.frame(resSigchange), file="changeSignificantonly.csv")
+```
+
+```{r shrinkage change}
+rldchange <- rlog(ddschange, blind=FALSE)
+ntdchange <- normTransform(ddschange)
+vsdchange <- vst(ddschange, blind=FALSE)
+meanSdPlot(assay(rldchange))
+meanSdPlot(assay(ntdchange))
+meanSdPlot(assay(vsdchange))
+```
+
+#### Heat Map 
+
+```{r heatmap change}
+sampleDistschange <- dist(t(assay(vsdchange)))
+sampleDistMatrixchange <- as.matrix(sampleDistschange)
+rownames(sampleDistMatrixchange) <- paste(vsdchange$treatment, vsdchange$letter, sep="-")
+colnames(sampleDistMatrixchange) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+adaptedheatmap <- pheatmap(sampleDistMatrixchange, clustering_distance_rows=sampleDistschange, clustering_distance_cols=sampleDistschange, col=colors)
+save_pheatmap_pdf( adaptedheatmap, "heatmap/adaptedheatmap .pdf")
+```
+
+```{r pca change}
+pcaDatachange <- plotPCA(vsdchange, intgroup=c("treatment", "letter"), returnData=TRUE)
+percentVarchange <- round(100 * attr(pcaDatachange, "percentVar"))
+archchange <- ggplot(pcaDatachange, aes(PC1, PC2, color=treatment)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVarchange[1],"% variance")) + ylab(paste0("PC2: ",percentVarchange[2],"% variance")) + geom_text(label=studydesignchange$letter, nudge_x = 0.45, nudge_y = 1.5, check_overlap = T)+ coord_fixed() + theme_bw()
+print(archchange)
+ggsave(archchange, file="pca/adaptedpca.pdf", width = 8.5, height = 11)
+```
+
+### Lineage Comparison
+
+```{r lineage treatments}
+studydesignlineage <- read.delim("studydesignlineage.csv", stringsAsFactors=TRUE)
+```
+```{r create DEseq2 lineage}
+fileslineage <- file.path(studydesignlineage$name, "quant.sf")
+fileslineage <- paste0('mapping/', sep = "", fileslineage)
+txi.salmonlineage <- tximport(fileslineage, type = "salmon", tx2gene = ochgenemap)
+ddsTxilineage <- DESeqDataSetFromTximport(txi.salmonlineage, colData = studydesignlineage, design = ~rep)
+keeplineage <- rowSums(counts(ddsTxilineage)) >= 10
+ddslineage <- ddsTxilineage[keeplineage,]
+ddslineage <- DESeq(ddslineage)
+```
+
+```{r results lineage}
+reslineage <- results(ddslineage)
+resultsNames(ddslineage)
+resOrderedlineage <- reslineage[order(reslineage$pvalue),]
+resSiglineage <- subset(resOrderedlineage, padj < 0.1)
+sum(reslineage$padj < 0.1, na.rm=TRUE)
+resIHWlineage <- results(ddslineage, filterFun=ihw)
+sum(resIHWlineage$padj < 0.1, na.rm=TRUE)
+plotMA(reslineage, ylim=c(-2,2))
+```
+
+```{r normalization lineage}
+resapeglmlineage <- lfcShrink(ddslineage, coef=2, type="apeglm")
+par(mfrow=c(1,3), mar=c(4,4,2,1))
+xlim <- c(1,1e5); ylim <- c(-3,3)
+resNormlineage <- lfcShrink(ddslineage, coef=2, type="normal")
+plotMA(resNormlineage, xlim=xlim, ylim=ylim, main="normal")
+plotCounts(ddslineage, gene=which.min(reslineage$padj), intgroup="rep")
+```
+
+```{r write sig genes to file lineage}
+write.csv(as.data.frame(resOrderedlineage), file="lineageordered.csv")
+write.csv(as.data.frame(resSiglineage), file="lineageSignificantonly.csv")
+```
+
+```{r shrinkage lineage}
+rldlineage <- rlog(ddslineage, blind=FALSE)
+ntdlineage <- normTransform(ddslineage)
+vsdlineage <- vst(ddslineage, blind=FALSE)
+meanSdPlot(assay(rldlineage))
+meanSdPlot(assay(ntdlineage))
+meanSdPlot(assay(vsdlineage))
+```
+
+#### Heat Map 
+
+```{r heatmap lineage}
+sampleDistslineage <- dist(t(assay(vsdlineage)))
+sampleDistMatrixlineage <- as.matrix(sampleDistslineage)
+rownames(sampleDistMatrixlineage) <- paste(vsdlineage$rep, vsdlineage$treatment, sep="-")
+colnames(sampleDistMatrixlineage) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+lineageheatmap <- pheatmap(sampleDistMatrixlineage, clustering_distance_rows=sampleDistslineage, clustering_distance_cols=sampleDistslineage, col=colors)
+save_pheatmap_pdf(lineageheatmap, "heatmap/lineageheatmap.pdf")
+```
+
+```{r pca lineage}
+pcaDatalineage <- plotPCA(vsdlineage, intgroup=c("rep", "treatment"), returnData=TRUE)
+percentVarlineage <- round(100 * attr(pcaDatalineage, "percentVar"))
+archlineage <- ggplot(pcaDatalineage, aes(PC1, PC2, color=rep)) + geom_point(size=3) + xlab(paste0("PC1: ",percentVarlineage[1],"% variance")) + ylab(paste0("PC2: ",percentVarlineage[2],"% variance")) + geom_text(label=studydesignlineage$rep, nudge_x = 0.45, nudge_y = 1.5, check_overlap = T)+ coord_fixed() + theme_bw()
+print(archlineage)
+ggsave(archlineage, file="pca/archlineage.pdf", width = 8.5, height = 11)
+```
+```{r fold change rd2}
+resSigevolved.2fold <- subset(resSigevolved, log2FoldChange < -2 |log2FoldChange > 2)
+df.evolved.2fold <-  data.frame(Knum=resSigevolved.2fold@rownames, fold=resSigevolved.2fold@listData$log2FoldChange)
+df.evolved.2foldannotated <- merge(df.evolved.2fold, totalKOrefmap, by=c('Knum'), all.x=TRUE)
+df.evolved.2foldannotated[is.na(df.evolved.2foldannotated)] <- 'unannotated'
+fold.evolved <- ggplot(df.evolved.2foldannotated, aes(x=catagory, y=fold))+geom_point(size=1, alpha=1, position=position_jitter(w=0.3, h=0))+theme(axis.text.x=element_text(angle=60,hjust=1))+labs(title = 'Fold difference by catagory', subtitle = 'Evolved at 24C vs Evolved at 30', x='Kegg catagory', Y='Fold Expression Change')
+print(fold.evolved)
+ggsave(fold.evolved, file="pca/fold.evolved30.pdf", width = 8.5, height = 11)
+resSigchange.2fold <- subset(resSigchange, log2FoldChange < -2 |log2FoldChange > 2)
+df.change.2fold <-  data.frame(Knum=resSigchange.2fold@rownames, fold=resSigchange.2fold@listData$log2FoldChange)
+df.change.2foldannotated <- merge(df.change.2fold, totalKOrefmap, by=c('Knum'), all.x=TRUE)
+df.change.2foldannotated[is.na(df.change.2foldannotated)] <- 'unannotated'
+fold.change <- ggplot(df.change.2foldannotated, aes(x=catagory, y=fold))+geom_point(size=1, alpha=1, position=position_jitter(w=0.3, h=0))+theme(axis.text.x=element_text(angle=60,hjust=1))+labs(title = 'Fold difference by catagory', subtitle = 'Evolved at 24C adapted to 30C vs Evolved at 24C Adapted to 18', x='Kegg catagory', Y='Fold Expression Change')
+print(fold.change)
+ggsave(fold.change, file="pca/fold.change.pdf", width = 8.5, height = 11)
+```
+```{r normalize counts for siggene heatmap}
+NormalizedCounts <- counts(ddsall, normalized=TRUE)
+colnames(NormalizedCounts) <- c(as.list(levels(ddsall@colData@listData$name)))
+```
+
+```{bash get siggenes}
+cut -f1 AllDifExpGenes.tsv | sort | uniq > DifGenelist.txt
+```
+
+```{r read in gene list}
+DifGenelist <- read.table("DifGenelist.txt", quote="\"", comment.char="")
+```
+
+
+```{r subset from all of the genes}
+sig.dir <- subset(NormalizedCounts, row.names(NormalizedCounts) %in% DifGenelist$V1)
+sig.dir2 <- as.data.frame(sig.dir)
+sig.dir2$mean=rowMeans(sig.dir[,c(1:28)], na.rm=TRUE)
+sig.dir3 <- log2(sig.dir2)
+sig.dir3[sig.dir3 == -Inf] <- 0
+sig.dir3[29:ncol(sig.dir3)] <- sig.dir3[29:ncol(sig.dir3)]-sig.dir3[,29]
+sig.dir3 <- sig.dir3[,-29]
+columnOrder <- studydesignall
+columnOrder$heatmap <- paste0(columnOrder$treatment,sep='-',columnOrder$rep)
+oldnames=c("OC10","OC11","OC13","OC14","OC15","OC16","OC17","OC18","OC1","OC22","OC23","OC24","OC25","OC26","OC27","OC28","OC29","OC2","OC30","OC31","OC32","OC3","OC4","OC5","OC6","OC7","OC8","OC9")
+newnames <- c("adapted30-f","adapted30-c","evolved18-c","evolved18-d","evolved18-a","evolved18-b","evolved18-e","evolved18-f","adapted18-a","evolved24-b","evolved24-e","evolved24-f","evolved30-c","evolved30-d","evolved30-a","evolved30-b","evolved30-e","adapted18-b","evolved30-f","adapted30-d","evolved24-a","adapted18-c","adapted18-d","adapted18-e","adapted18-f","adapted30-a","adapted30-b","adapted30-e")
+sig.dir3 <- sig.dir3 %>% rename_at(vars(oldnames), ~ newnames)
+sig.dir3 <- sig.dir3[ , c("evolved18-c","evolved18-d","evolved18-a","evolved18-b","evolved18-e","evolved18-f","adapted18-a", "adapted18-c", "adapted18-b","adapted18-d","adapted18-e","adapted18-f","evolved24-a","evolved24-b","evolved24-e","evolved24-f","adapted30-f","adapted30-c","adapted30-a","adapted30-b","adapted30-e","adapted30-d","evolved30-c","evolved30-d","evolved30-a","evolved30-b","evolved30-e","evolved30-f")]
+sig.dir4 <- as.matrix(sig.dir3)
+pheatmap(sig.dir4, col=colors, show_rownames=FALSE, cluster_cols=FALSE, clustering_distance_rows='euclidean')
+#pheatmap(sig.dir4, show_rownames=FALSE)
+```
+photosynthisisKnums <- totalKOrefmap[grepl("Photosynthe", totalKOrefmap[["specific"]]), ]
+resall.photo <- subset(resapeglmall, resapeglmall@rownames %in% photosynthisisKnums$Knum)
+write.csv(as.data.frame(resall.photo), file="resall.photo.csv")
+resall.photo <- read.csv("~/cpaightNAS/cpaight/data/ochramonas/resall.photo.csv")
+normalizedcountsall <- counts(ddsall, normalize=TRUE)
+resall.photo <- subset(normalizedcountsall, row.names(normalizedcountsall) %in% photosynthisisKnums$Knum)
+colnames(resall.photo) <- c(as.list(levels(ddsall@colData@listData$name)))
+resall.photoLong <- as.data.frame(t(resall.photo))
+allphoto$name <- row.names(resall.photoLong)
+allphoto <- merge(studydesignall, allphoto, by=c('name'))
+allphotoSummary <- allphoto %>% group_by(treatment) %>% summarize_if(is.numeric, mean)
+allphotoSummary$mean <- rowMeans(allphotoSummary[,-1])
+allphotoSummary$sd <- sapply(allphotoSummary[,-1], sd)
+allphotoMeandf <- data.frame(Temperture=rep(c('18','24','30'), each=1), Treatment=rep(c('Evolved', 'Adapted'), each=3), mean=c(4950.557,4467.426, 3388.009,3785.745, 4467.426,3672.230), sd=c(5084.895, 4792.370, 3610.317, 4038.245, 4792.370, 3786.584))
+MeanPhotoGraph <- ggplot(allphotoMeandf, aes(x=Temperture, y=log10(mean), group=Treatment, color=Treatment)) +
+geom_errorbar(aes(ymin=log10(mean)-log10(sd), ymax=log10(mean)+log10(sd)), width=.1,
+position=position_dodge(0.05)) +
+geom_line() + geom_point()+
+scale_color_brewer(palette="Paired")+theme_minimal()
+plot(MeanPhotoGraph)
+
+
+## R Markdown
+
+
