@@ -1,0 +1,198 @@
+---
+title: "Och_SuppFig_TempCheck"
+author: "Lepori-Bui et al"
+date: "4/25/2022"
+output: html_document
+---
+
+```{r}
+# Install relevant packages
+require(sciplot)
+
+# Load data
+
+Temp.Check.data <- read.csv("/Users/hollyvm/GoogleSync/StudentWork/MichelleLeporiBui/WeeklyAcclimationCheck.csv")
+Temp.Check.data$Flask.ID <- paste(Temp.Check.data$Strain,Temp.Check.data$Acc,Temp.Check.data$Rep,sep='.') # ID column creates a unique ID for each experimental lineage x acclimation temperature
+
+```
+
+
+Calculating weekly data
+```{r}
+# Build the dataframe
+strains <- unique(Temp.Check.data$Strain) # list of unique strains in the dataset
+temps <- unique(Temp.Check.data$Acc) # list of unique acclimation temperatures in the dataset
+reps <- unique(Temp.Check.data$Rep) # list of unique replicate IDs in the dataset
+weeks <- c(1,2,3)
+
+weekly.data <- as.data.frame(cbind(rep(weeks,length(strains)*length(temps)*length(reps)),rep(strains,each=length(weeks)*length(temps)*length(reps)),rep(rep(temps,each=length(reps)*length(weeks)),2),rep(rep(reps,each=length(weeks)),length(strains)*length(temps)))) #Build a dataframe with metadata on week, strain, acclimation temperature, and replicate
+colnames(weekly.data) <- c('Week','Strain','Acclim','Rep') 
+weekly.data$Flask.ID <- paste(weekly.data$Strain,weekly.data$Acclim,weekly.data$Rep,sep='.') # ID column for matching with dataframe
+weekly.data$RedF <- NaN # holder for red fluorescence, a proxy for chlorophyll a
+weekly.data$Fv.Fm <- NaN # holder for photosynthetic efficiency
+weekly.data$Growth <- NaN # holder for growth rates
+
+
+# Holding vector for unique flask IDs
+flasks <- unique(weekly.data$Flask.ID)
+
+# Calculate photosynthetic efficiency and red fluorescence
+for(i in 1:length(flasks)){
+  subdat <- Temp.Check.data[Temp.Check.data$Flask.ID==flasks[i],]
+  # Week 1
+  weekly.data[weekly.data$Flask.ID==flasks[i]&weekly.data$Week==1,]$RedF <- mean(subdat[subdat$ExptDay<7,]$RedF,na.rm=T)
+  weekly.data[weekly.data$Flask.ID==flasks[i]&weekly.data$Week==1,]$Fv.Fm <- mean(subdat[subdat$ExptDay<7,]$Fv.Fm,na.rm=T)
+  # Week 2
+  weekly.data[weekly.data$Flask.ID==flasks[i]&weekly.data$Week==2,]$RedF <- mean(subdat[subdat$ExptDay>6&subdat$ExptDay<14,]$RedF,na.rm=T)
+  weekly.data[weekly.data$Flask.ID==flasks[i]&weekly.data$Week==2,]$Fv.Fm <- mean(subdat[subdat$ExptDay>6&subdat$ExptDay<14,]$Fv.Fm,na.rm=T)
+  # Week 3
+  weekly.data[weekly.data$Flask.ID==flasks[i]&weekly.data$Week==3,]$RedF <- mean(subdat[subdat$ExptDay>13,]$RedF,na.rm=T)
+  weekly.data[weekly.data$Flask.ID==flasks[i]&weekly.data$Week==3,]$Fv.Fm <- mean(subdat[subdat$ExptDay>13,]$Fv.Fm,na.rm=T)
+}
+
+# Calculate growth rates
+for(i in 1:length(flasks)){
+  subdat <- Temp.Check.data[Temp.Check.data$Flask.ID==flasks[i],]
+  # Week 1
+  subsubdat <- subdat[subdat$ExptDay < 7,]
+  weekly.data[weekly.data$Flask.ID==flasks[i]&weekly.data$Week==1,]$Growth <- lm(log(subsubdat$CellspmL)~subsubdat$ExptDay)$coefficients[2]
+  
+  # Week 2
+  subsubdat <- subdat[subdat$ExptDay > 7.01 & subdat$ExptDay < 13,]
+  weekly.data[weekly.data$Flask.ID==flasks[i]&weekly.data$Week==2,]$Growth <- lm(log(subsubdat$CellspmL)~subsubdat$ExptDay)$coefficients[2]
+  
+  if(subdat$Strain[1]==2951 & subdat$Acc[1]%in%c(18,24)){ # Use a different window for 2951 @ 18*C and 24*C because this set got diluted partway through week 2
+    subsubdat <- subdat[subdat$ExptDay > 3 & subdat$ExptDay < 10,]
+    weekly.data[weekly.data$Flask.ID==flasks[i]&weekly.data$Week==2,]$Growth <- lm(log(subsubdat$CellspmL)~subsubdat$ExptDay)$coefficients[2]
+  }
+  
+  # Week 3
+  subsubdat <- subdat[subdat$ExptDay > 13,]
+  weekly.data[weekly.data$Flask.ID==flasks[i]&weekly.data$Week==3,]$Growth <- lm(log(subsubdat$CellspmL)~subsubdat$ExptDay)$coefficients[2]
+}
+
+```
+
+
+```{r,fig.height=4,fig.width=4}
+
+w1col <- rgb(43/255,107/255,142/255)
+w2col <- rgb(43/255,107/255,142/255,.50)
+w3col <- rgb(43/255,107/255,142/255,.20)
+
+colvec <- c(w1col,w2col,w3col)
+
+par(mar=c(4,4,1,1),mfcol=c(3,2))
+bargraph.CI(Acclim,Growth,group=Week,data=weekly.data[weekly.data$Strain==1391,],xlab='',ylab='Growth Rate (d^-1)',las=1,col=colvec,main='Strain 1391',ylim=c(0,.35))
+text(c(1.5,2.5,3.5,5.5,6.5,7.5,9.5,10.5,11.5),c(.1,.07,.06,.33,.3,.31,.28,.31,.28),c('a','a','a',rep('b',6)))
+legend(x='topleft',inset=0.05,legend=c('Week 2','Week 3','Week 4'),pch=22,pt.cex=1.8,pt.bg=colvec,cex=1.2)
+bargraph.CI(Acclim,RedF,group=Week,data=weekly.data[weekly.data$Strain==1391,],xlab='',ylab='Red Fluorescence (RFU)',las=1,col=colvec,ylim=c(0,13500))
+text(c(1.5,2.5,3.5,5.5,6.5,7.5,9.5,10.5,11.5),c(6800,6200,6500,11200,10300,10100,12700,13300,12500),c('a','a','a',rep('b',3),rep('c',3)))
+bargraph.CI(Acclim,Fv.Fm,group=Week,data=weekly.data[weekly.data$Strain==1391,],xlab='Acclimation Temperature',ylab='Photosynthetic Efficiency (Fv/Fm)',las=1,col=colvec,ylim=c(0,.56))
+text(c(1.5,2.5,3.5,5.5,6.5,7.5,9.5,10.5,11.5),c(.48,.47,.46,.53,.55,.545,.54,.535,.535),c('a','a','a',rep('b',6)))
+
+
+w1col <- rgb(112/255,11/255,57/255)
+w2col <- rgb(112/255,11/255,57/255,.50)
+w3col <- rgb(112/255,11/255,57/255,.20)
+
+colvec <- c(w1col,w2col,w3col)
+
+
+bargraph.CI(Acclim,Growth,group=Week,data=weekly.data[weekly.data$Strain==2951,],xlab='',ylab='Growth Rate (d^-1)',las=1,col=colvec,main='Strain 2951',ylim=c(0,.55))
+text(c(1.5,2.5,3.5,5.5,6.5,7.5,9.5,10.5,11.5),c(.255,.21,.255,.35,.32,.34,.49,.54,.42),c('ab','b','ab','ac','abd','abd','ce','e','cde'))
+bargraph.CI(Acclim,RedF,group=Week,data=weekly.data[weekly.data$Strain==2951,],xlab='',ylab='Red Fluorescence (RFU)',las=1,col=colvec,ylim=c(0,9800))
+text(c(1.5,2.5,3.5,5.5,6.5,7.5,9.5,10.5,11.5),c(4600,4300,4400,5900,5700,5100,9500,7500,8350),c('a','a','a','a','a','a','b','c','bc'))
+bargraph.CI(Acclim,Fv.Fm,group=Week,data=weekly.data[weekly.data$Strain==2951,],xlab='Acclimation Temperature',ylab='Photosynthetic Efficiency (Fv/Fm)',las=1,col=colvec,ylim=c(0,.58))
+text(c(1.5,2.5,3.5,5.5,6.5,7.5,9.5,10.5,11.5),c(.55,.53,.55,.565,.565,.55,.55,.57,.53),c('abc','ac','ab','b','b','ab','abc','b','c'))
+
+```
+
+
+```{r}
+
+TukeyHSD(aov(Growth~Week*Acclim,data=weekly.data[weekly.data$Strain==1391,]))
+TukeyHSD(aov(RedF~Week*Acclim,data=weekly.data[weekly.data$Strain==1391,]))
+TukeyHSD(aov(Fv.Fm~Week*Acclim,data=weekly.data[weekly.data$Strain==1391,]))
+
+TukeyHSD(aov(Growth~Week*Acclim,data=weekly.data[weekly.data$Strain==2951,]))
+TukeyHSD(aov(RedF~Week*Acclim,data=weekly.data[weekly.data$Strain==2951,]))
+TukeyHSD(aov(Fv.Fm~Week*Acclim,data=weekly.data[weekly.data$Strain==2951,]))
+
+```
+
+Color variants
+
+```{r,fig.height=4,fig.width=4}
+
+w1col <- rgb(43/255,107/255,142/255)
+w2col <- rgb(43/255,107/255,142/255,.50)
+w3col <- rgb(43/255,107/255,142/255,.20)
+
+col18.1 <- rgb(53/255,91/255,186/255)
+col18.2 <- rgb(53/255,91/255,186/255,.5)
+col18.3 <- rgb(53/255,91/255,186/255,.2)
+
+col24.1 <- rgb(108/255,108/255,108/255)
+col24.2 <- rgb(108/255,108/255,108/255,.5)
+col24.3 <- rgb(108/255,108/255,108/255,.2)
+
+col30.1 <- rgb(176/255,59/255,62/255)
+col30.2 <- rgb(176/255,59/255,62/255,.5)
+col30.3 <- rgb(176/255,59/255,62/255,.2)
+
+colvec <- c(col18.1,col18.2,col18.3,col24.1,col24.2,col24.3,col30.1,col30.2,col30.3)
+
+# 1391 data
+
+par(mar=c(4,4.2,1,1),mfcol=c(3,2))
+bargraph.CI(Acclim,Growth,group=Week,data=weekly.data[weekly.data$Strain==1391,],xlab='',ylab=expression(paste('Growth Rate (',d^-1,')',sep='')),las=1,col=colvec,main='Strain 1391',ylim=c(0,.35),names=c('18°C','24°C','30°C'))
+text(c(1.5,2.5,3.5,5.5,6.5,7.5,9.5,10.5,11.5),c(.1,.07,.06,.33,.3,.31,.28,.31,.28),c('a','a','a',rep('b',6)))
+legend(x='topleft',inset=0.05,legend=c('Week 2','Week 3','Week 4'),pch=22,pt.cex=1.8,pt.bg=c('black','gray50','gray80'),cex=1.2)
+bargraph.CI(Acclim,RedF,group=Week,data=weekly.data[weekly.data$Strain==1391,],xlab='',ylab='Red Fluorescence (RFU)',las=1,col=colvec,ylim=c(0,13500),names=c('18°C','24°C','30°C'))
+text(c(1.5,2.5,3.5,5.5,6.5,7.5,9.5,10.5,11.5),c(6800,6200,6500,11200,10300,10100,12700,13300,12500),c('a','a','a',rep('b',3),rep('c',3)))
+bargraph.CI(Acclim,Fv.Fm,group=Week,data=weekly.data[weekly.data$Strain==1391,],xlab='Acclimation Temperature',ylab='Photosynthetic Efficiency (Fv/Fm)',las=1,col=colvec,ylim=c(0,.56),names=c('18°C','24°C','30°C'))
+text(c(1.5,2.5,3.5,5.5,6.5,7.5,9.5,10.5,11.5),c(.48,.47,.46,.53,.55,.545,.54,.535,.535),c('a','a','a',rep('b',6)))
+
+
+# 2951 data
+
+bargraph.CI(Acclim,Growth,group=Week,data=weekly.data[weekly.data$Strain==2951,],xlab='',ylab=expression(paste('Growth Rate (',d^-1,')',sep='')),las=1,col=colvec,main='Strain 2951',ylim=c(0,.55),names=c('18°C','24°C','30°C'))
+text(c(1.5,2.5,3.5,5.5,6.5,7.5,9.5,10.5,11.5),c(.255,.21,.255,.35,.32,.34,.49,.54,.42),c('ab','b','ab','ac','abd','abd','ce','e','cde'))
+bargraph.CI(Acclim,RedF,group=Week,data=weekly.data[weekly.data$Strain==2951,],xlab='',ylab='Red Fluorescence (RFU)',las=1,col=colvec,ylim=c(0,9800),names=c('18°C','24°C','30°C'))
+text(c(1.5,2.5,3.5,5.5,6.5,7.5,9.5,10.5,11.5),c(4600,4300,4400,5900,5700,5100,9500,7500,8350),c('a','a','a','a','a','a','b','c','bc'))
+bargraph.CI(Acclim,Fv.Fm,group=Week,data=weekly.data[weekly.data$Strain==2951,],xlab='Acclimation Temperature',ylab='Photosynthetic Efficiency (Fv/Fm)',las=1,col=colvec,ylim=c(0,.58),names=c('18°C','24°C','30°C'))
+text(c(1.5,2.5,3.5,5.5,6.5,7.5,9.5,10.5,11.5),c(.55,.53,.55,.565,.565,.55,.55,.57,.53),c('abc','ac','ab','b','b','ab','abc','b','c'))
+
+```
+
+
+### Raw Data Plot
+
+```{r}
+
+par(mar=c(4,4,1,1),mfcol=c(length(temps),length(strains)))
+
+repcols <- c('firebrick','coral','goldenrod','darkgreen','dodgerblue','black')
+
+for(i in 1:length(strains)){
+  for(j in 1:length(temps)){
+    subdat <- Temp.Check.data[Temp.Check.data$Strain==strains[i]&Temp.Check.data$Acc==temps[j],]
+    plot(subdat$ExptDay,subdat$CellspmL,log='y',main=paste('Strain ',strains[i],', Acclim to ',temps[j],sep=''),xlab='Expt Day',ylab='Cell Density',pch=21,col=repcols[as.factor(subdat$Rep)])
+}}
+
+
+for(i in 1:length(strains)){
+  for(j in 1:length(temps)){
+    subdat <- Temp.Check.data[Temp.Check.data$Strain==strains[i]&Temp.Check.data$Acc==temps[j],]
+    plot(subdat$ExptDay,subdat$Fv.Fm,main=paste('Strain ',strains[i],', Acclim to ',temps[j],sep=''),xlab='Expt Day',ylab='Fv/Fm',pch=21,col=repcols[as.factor(subdat$Rep)])
+}}
+
+for(i in 1:length(strains)){
+  for(j in 1:length(temps)){
+    subdat <- Temp.Check.data[Temp.Check.data$Strain==strains[i]&Temp.Check.data$Acc==temps[j],]
+    plot(subdat$ExptDay,subdat$RedF,main=paste('Strain ',strains[i],', Acclim to ',temps[j],sep=''),xlab='Expt Day',ylab='Red F',pch=21,col=repcols[as.factor(subdat$Rep)])
+}}
+
+```
+
